@@ -1,4 +1,4 @@
-package state;
+package org.apache.flink.streaming.examples.state;
 
 import org.apache.flink.api.common.functions.RichFlatMapFunction;
 import org.apache.flink.api.common.state.ValueState;
@@ -10,15 +10,18 @@ import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.util.Collector;
 
-public class StateTest {
-	public static void main(String[] args) {
-		final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+public class StateRichFunction {
+	public static void main(String[] args) throws Exception {
+		StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 		env.fromElements(Tuple2.of(1L, 3L), Tuple2.of(1L, 5L), Tuple2.of(1L, 7L), Tuple2.of(1L, 4L), Tuple2.of(1L, 2L))
 				.keyBy(0).flatMap(new CountWindowAverage()).print();
+
+		env.execute("state ");
 	}
 }
 
-class CountWindowAverage extends RichFlatMapFunction<Tuple2<Long, Long>, Tuple2<Long, Long>> {
+
+class CountWindowAverage extends   RichFlatMapFunction<Tuple2<Long, Long>, Tuple2<Long, Long>> {
 
 	/**
 	 * ValueState状态句柄. 第一个值为count，第二个值为sum。

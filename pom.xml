@@ -13,8 +13,8 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-	<groupId>flink-test</groupId>
-	<artifactId>flink-test</artifactId>
+	<groupId>Flink-demo</groupId>
+	<artifactId>Flink-demo</artifactId>
 	<version>1.0-SNAPSHOT</version>
 	<packaging>jar</packaging>
 
@@ -23,7 +23,7 @@
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<flink.version>1.6.1</flink.version>
+		<flink.version>1.7.0</flink.version>
 		<java.version>1.8</java.version>
 		<scala.binary.version>2.11</scala.binary.version>
 		<maven.compiler.source>${java.version}</maven.compiler.source>
@@ -108,7 +108,6 @@
 
 	<build>
 		<plugins>
-
 			<!-- Java Compiler -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -170,6 +169,7 @@
 
 		<pluginManagement>
 			<plugins>
+
 
 				<!-- This improves the out-of-the-box experience in Eclipse by resolving 
 					some warnings. -->
