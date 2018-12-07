@@ -60,6 +60,11 @@
 			<version>${flink.version}</version>
 			<scope>provided</scope>
 		</dependency>
+		<dependency>
+			<groupId>mysql</groupId>
+			<artifactId>mysql-connector-java</artifactId>
+			<version>6.0.6</version>
+		</dependency>
 
 		<!-- Add connector dependencies here. They must be in the default scope 
 			(compile). -->

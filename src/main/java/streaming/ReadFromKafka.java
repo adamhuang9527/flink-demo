@@ -17,7 +17,7 @@ public class ReadFromKafka {
 		properties.setProperty("bootstrap.servers", "localhost:9092");
 		properties.setProperty("group.id", "test");
 
-		FlinkKafkaConsumer010<String> myConsumer = new FlinkKafkaConsumer010<>("ui", new SimpleStringSchema(),
+		FlinkKafkaConsumer010<String> myConsumer = new FlinkKafkaConsumer010<>("ui1", new SimpleStringSchema(),
 				properties);
 		myConsumer.setStartFromEarliest();
 

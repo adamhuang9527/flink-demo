@@ -2,6 +2,7 @@ package streaming.window;
 
 import java.util.Properties;
 
+import org.apache.flink.api.common.functions.AggregateFunction;
 import org.apache.flink.api.common.functions.FlatMapFunction;
 import org.apache.flink.api.common.serialization.SimpleStringSchema;
 import org.apache.flink.api.java.tuple.Tuple2;
@@ -25,7 +26,6 @@ public class SlidingWindows {
 		env.enableCheckpointing(5000);
 		env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
 		env.setParallelism(1);
-		
 
 		Properties properties = new Properties();
 		properties.setProperty("bootstrap.servers", "localhost:9092");
