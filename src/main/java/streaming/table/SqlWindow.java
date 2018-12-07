@@ -15,6 +15,8 @@ import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer010;
 import org.apache.flink.table.api.Table;
 import org.apache.flink.table.api.TableEnvironment;
 import org.apache.flink.table.api.java.StreamTableEnvironment;
+import org.apache.flink.table.sinks.CsvTableSink;
+import org.apache.flink.table.sinks.TableSink;
 import org.apache.flink.util.Collector;
 
 /**
@@ -79,6 +81,7 @@ public class SqlWindow {
 
 		tableEnv.toRetractStream(result, Result.class).print();
 
+		
 		env.execute();
 
 	}
