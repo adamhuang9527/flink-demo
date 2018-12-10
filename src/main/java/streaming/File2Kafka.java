@@ -14,6 +14,8 @@ import org.apache.flink.streaming.connectors.kafka.FlinkKafkaProducer010;
  */
 public class File2Kafka {
 	public static void main(String[] args) throws Exception {
+		
+		
 		StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
 		DataStream ds = env.readTextFile("/Users/user/work/flink_data/ui.csv");

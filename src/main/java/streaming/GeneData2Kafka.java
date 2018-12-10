@@ -1,5 +1,9 @@
 package streaming;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.concurrent.atomic.AtomicLong;
+
 import org.apache.flink.api.common.serialization.SimpleStringSchema;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
@@ -22,16 +26,27 @@ public class GeneData2Kafka {
 
 		DataStream<String> source = env.addSource(new SourceFunction<String>() {
 
+			private SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
 			private volatile boolean isRunning = true;
 			private static final long serialVersionUID = 1L;
+			long count = 0;
+			private Date date;
+			private AtomicLong al = new AtomicLong(0L);
 
 			@Override
 			public void run(SourceContext<String> ctx) throws Exception {
 				while (isRunning) {
 					Thread.sleep(10);
+					date = new Date();
+					StringBuffer ss = new StringBuffer();
 					String pro = province[(int) (Math.random() * 29)];
+					ss.append(pro).append("\t");
 					String id = "id-" + (int) (Math.random() * 1000);
-					ctx.collect(pro + "\t" + id + "\t" + System.currentTimeMillis());
+					ss.append(id).append("\t");
+					ss.append(date.getTime()).append("\t");
+					ss.append(sdf.format(date)).append("\t");
+					ss.append(al.incrementAndGet());
+					ctx.collect(ss.toString());
 				}
 			}
 
@@ -47,6 +62,6 @@ public class GeneData2Kafka {
 				args[0], // target topic
 				new SimpleStringSchema()); // serialization schema
 		source.addSink(myProducer);
-		env.execute();
+		env.execute("gene data to kafka");
 	}
 }
