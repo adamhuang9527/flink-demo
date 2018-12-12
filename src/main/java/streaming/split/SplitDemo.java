@@ -71,7 +71,7 @@ public class SplitDemo {
 
 		odd.print();
 		
-		even.addSink(new MysqlSink());
+//		even.addSink(new MysqlSink());
 
 		env.execute("kafka2mysql");
 

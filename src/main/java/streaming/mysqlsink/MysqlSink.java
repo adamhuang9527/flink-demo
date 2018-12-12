@@ -3,33 +3,42 @@ package streaming.mysqlsink;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
+import java.util.List;
 
-import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.functions.sink.RichSinkFunction;
 
-public class MysqlSink extends RichSinkFunction<Tuple2<String, Long>> {
+public class MysqlSink extends RichSinkFunction<List> {
 
 	private static final long serialVersionUID = 1L;
 
 	private Connection connection;
 	private PreparedStatement preparedStatement;
 
+	private String username = "";
+	private String password;
+	private String url;
+	private String sql;
+	private List params;
+
+	public MysqlSink(String username, String password, String url, String sql) {
+		super();
+		this.username = username;
+		this.password = password;
+		this.url = url;
+		this.sql = sql;
+	}
+
 	/**
 	 * open方法是初始化方法，会在invoke方法之前执行，执行一次。
 	 */
 	@Override
 	public void open(Configuration parameters) throws Exception {
-		// JDBC连接信息
-		String USERNAME = "root";
-		String PASSWORD = "root";
 		String DRIVERNAME = "com.mysql.jdbc.Driver";
-		String DBURL = "jdbc:mysql://localhost:3306/flink";
 		// 加载JDBC驱动
 		Class.forName(DRIVERNAME);
 		// 获取数据库连接
-		connection = DriverManager.getConnection(DBURL, USERNAME, PASSWORD);
-		String sql = "insert into flink.ui1(id,time) values (?,?)";
+		connection = DriverManager.getConnection(url, username, password);
 		preparedStatement = connection.prepareStatement(sql);
 		super.open(parameters);
 	}
@@ -41,10 +50,13 @@ public class MysqlSink extends RichSinkFunction<Tuple2<String, Long>> {
 	 * @throws Exception
 	 */
 	@Override
-	public void invoke(Tuple2<String, Long> data) throws Exception {
+	public void invoke(List data) throws Exception {
 		try {
-			preparedStatement.setString(1, data.f0);
-			preparedStatement.setLong(2, data.f1);
+			if (null != data) {
+				for (int i = 0; i < data.size(); i++) {
+					preparedStatement.setObject(i + 1, data.get(i));
+				}
+			}
 			preparedStatement.executeUpdate();
 		} catch (Exception e) {
 			e.printStackTrace();
