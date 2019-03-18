@@ -16,7 +16,7 @@ public class GeneData implements SourceFunction<String> {
     public void run(SourceContext<String> ctx) throws Exception {
 
         while (isRunning) {
-            Thread.sleep((int) (Math.random() * 5));
+            Thread.sleep((int) (Math.random() * 10));
             // traceid,userid,timestamp,status,response time
 
 

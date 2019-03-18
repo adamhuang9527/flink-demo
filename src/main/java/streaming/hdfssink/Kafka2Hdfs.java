@@ -1,10 +1,5 @@
 package streaming.hdfssink;
 
-import java.time.Instant;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
-import java.util.Properties;
-
 import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.common.serialization.SimpleStringSchema;
 import org.apache.flink.contrib.streaming.state.RocksDBStateBackend;
@@ -15,9 +10,13 @@ import org.apache.flink.streaming.connectors.fs.Clock;
 import org.apache.flink.streaming.connectors.fs.StringWriter;
 import org.apache.flink.streaming.connectors.fs.bucketing.Bucketer;
 import org.apache.flink.streaming.connectors.fs.bucketing.BucketingSink;
-import org.apache.flink.streaming.connectors.fs.bucketing.DateTimeBucketer;
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer010;
 import org.apache.hadoop.fs.Path;
+
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.Properties;
 
 /**
  * 
@@ -26,7 +25,7 @@ import org.apache.hadoop.fs.Path;
  */
 public class Kafka2Hdfs {
 
-	static transient DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd--HHmm")
+	static transient DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
 			.withZone(ZoneId.of("UTC+8"));
 
 	public static void main(String[] args) throws Exception {
@@ -45,7 +44,9 @@ public class Kafka2Hdfs {
 //		myConsumer.setStartFromEarliest();
 //		myConsumer.setStartFromLatest();
 
-		DataStream<UI> ds = env.addSource(myConsumer).map(new MapFunction<String, UI>() {
+
+
+		DataStream<UI> ds = env.readTextFile("/Users/user/work/flink_data/ui3.txt").map(new MapFunction<String, UI>() {
 
 			@Override
 			public UI map(String value) throws Exception {

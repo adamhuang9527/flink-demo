@@ -1,12 +1,9 @@
 package streaming.window;
 
-import java.util.Properties;
-
 import org.apache.flink.api.common.functions.AggregateFunction;
 import org.apache.flink.api.common.functions.FlatMapFunction;
-import org.apache.flink.api.common.functions.MapFunction;
+import org.apache.flink.api.common.functions.RichFlatMapFunction;
 import org.apache.flink.api.common.serialization.SimpleStringSchema;
-import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.tuple.Tuple4;
 import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.datastream.DataStream;
@@ -17,8 +14,9 @@ import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindo
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer010;
 import org.apache.flink.util.Collector;
-
 import streaming.table.SqlWindow.Result;
+
+import java.util.Properties;
 
 /**
  * 
@@ -120,4 +118,14 @@ public class WindowsPV {
 
 	}
 
+	private static class MyFlatMapFunction extends RichFlatMapFunction<String, Tuple4<String, String, Long, Integer>> {
+
+		@Override
+		public void flatMap(String value, Collector<Tuple4<String, String, Long, Integer>> out) throws Exception {
+			// TODO Auto-generated method stub
+			
+		}
+
+
+	}
 }

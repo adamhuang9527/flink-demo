@@ -28,7 +28,7 @@ import java.time.ZoneId;
 
 /**
  * side output 、table、sql、多sink的使用
- *
+ * <p>
  * 功能
  * 1。source从流接收数据，从主流数据中引出side outout进行计算，消费同一个流，避免多次接入，消耗网略
  * 2.通过table和sql计算pv,平均响应时间,错误率（status不等于200的占比）
@@ -54,7 +54,7 @@ public class Dashboard {
                     @Nullable
                     @Override
                     public Watermark checkAndGetNextWatermark(Tuple5<String, Integer, Long, Integer, Integer> lastElement, long extractedTimestamp) {
-                        return new Watermark(lastElement.f2);
+                        return new Watermark(lastElement.f2 - 3000);
                     }
 
                     @Override
@@ -64,21 +64,20 @@ public class Dashboard {
                 });
 
 
-        final OutputTag<Tuple5<String, Integer, Long, Integer, Integer>> outputTag = new OutputTag<Tuple5<String, Integer, Long, Integer, Integer>>("side-output"){};
+        final OutputTag<Tuple5<String, Integer, Long, Integer, Integer>> outputTag = new OutputTag<Tuple5<String, Integer, Long, Integer, Integer>>("side-output") {
+        };
 
 
-        SingleOutputStreamOperator<Tuple5<String, Integer, Long, Integer, Integer>> mainDataStream =  ds.process(new ProcessFunction<Tuple5<String, Integer, Long, Integer, Integer>, Tuple5<String, Integer, Long, Integer, Integer>>() {
+        SingleOutputStreamOperator<Tuple5<String, Integer, Long, Integer, Integer>> mainDataStream = ds.process(new ProcessFunction<Tuple5<String, Integer, Long, Integer, Integer>, Tuple5<String, Integer, Long, Integer, Integer>>() {
             @Override
             public void processElement(Tuple5<String, Integer, Long, Integer, Integer> value, Context ctx, Collector<Tuple5<String, Integer, Long, Integer, Integer>> out) throws Exception {
-                ctx.output(outputTag,value);
+                ctx.output(outputTag, value);
                 out.collect(value);
             }
         });
 
 
-
-
-        DataStream<Tuple5<String, Integer, Long, Integer, Integer>>  dataStream = mainDataStream.getSideOutput(outputTag);
+        DataStream<Tuple5<String, Integer, Long, Integer, Integer>> dataStream = mainDataStream.getSideOutput(outputTag);
 
 
         StreamTableEnvironment tenv = TableEnvironment.getTableEnvironment(env);
@@ -102,9 +101,6 @@ public class Dashboard {
         result1.insertInto("CsvSinkTable");
 
 
-
-
-
         //write to hdfs sink
         BucketingSink<Tuple5<String, Integer, Long, Integer, Integer>> sink = new BucketingSink<>("hdfs://localhost/logs/");
         sink.setUseTruncate(false);
@@ -122,13 +118,10 @@ public class Dashboard {
         ds.addSink(sink);
 
 
-
 //        tenv.toAppendStream(result1, Result.class).addSink(sink);
 
         //输出到控制台
 //        tenv.toAppendStream(result1, Row.class).print();
-
-        tenv.toRetractStream()
 
 
         env.execute();

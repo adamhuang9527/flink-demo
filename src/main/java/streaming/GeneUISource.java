@@ -1,13 +1,13 @@
 package streaming;
 
+import org.apache.flink.streaming.api.functions.source.SourceFunction;
+
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.apache.flink.streaming.api.functions.source.SourceFunction;
-import org.apache.flink.streaming.api.functions.source.SourceFunction.SourceContext;
 
 public class GeneUISource implements SourceFunction<List> {
 
@@ -24,7 +24,7 @@ public class GeneUISource implements SourceFunction<List> {
 	@Override
 	public void run(SourceContext<List> ctx) throws Exception {
 		while (isRunning) {
-			Thread.sleep(10);
+			Thread.sleep(100);
 			// 省市、id、datestamp、date、计数,
 			List list = new ArrayList();
 			date = new Date();
