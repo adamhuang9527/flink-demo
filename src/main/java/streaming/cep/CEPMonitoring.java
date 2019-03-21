@@ -28,6 +28,7 @@ import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.IngestionTimeExtractor;
 import org.apache.flink.streaming.api.windowing.time.Time;
+import org.apache.flink.util.Collector;
 import streaming.cep.events.MonitoringEvent;
 import streaming.cep.events.TemperatureAlert;
 import streaming.cep.events.TemperatureEvent;
@@ -36,6 +37,7 @@ import streaming.cep.sources.MonitoringEventSource;
 
 import java.util.List;
 import java.util.Map;
+
 
 /**
  * CEP example monitoring program
@@ -116,6 +118,7 @@ public class CEPMonitoring {
                     return new TemperatureWarning(first.getRackID(), (first.getTemperature() + second.getTemperature()) / 2);
                 }
         );
+
 
         // Alert pattern: Two consecutive temperature warnings appearing within a time interval of 20 seconds
         Pattern<TemperatureWarning, ?> alertPattern = Pattern.<TemperatureWarning>begin("first")

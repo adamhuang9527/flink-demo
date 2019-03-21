@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package streaming.cep.events
+package streaming.cep.events;
 
 public class TemperatureEvent extends MonitoringEvent {
     private double temperature;

@@ -18,7 +18,7 @@
 
 package streaming.cep.events;
 
-public class PowerEvent extends org.stsffap.cep.monitoring.events.MonitoringEvent {
+public class PowerEvent extends streaming.cep.events.MonitoringEvent {
     private double voltage;
 
     public PowerEvent(int rackID, double voltage) {

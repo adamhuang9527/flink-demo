@@ -20,11 +20,10 @@ package streaming.cep.sources;
 
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.functions.source.RichParallelSourceFunction;
-import org.stsffap.cep.monitoring.events.MonitoringEvent;
-import org.stsffap.cep.monitoring.events.PowerEvent;
-import org.stsffap.cep.monitoring.events.TemperatureEvent;
+import streaming.cep.events.MonitoringEvent;
+import streaming.cep.events.PowerEvent;
+import streaming.cep.events.TemperatureEvent;
 
-import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class MonitoringEventSource extends RichParallelSourceFunction<MonitoringEvent> {
@@ -49,14 +48,13 @@ public class MonitoringEventSource extends RichParallelSourceFunction<Monitoring
 
     private int offset;
 
-    public MonitoringEventSource(
-            int maxRackId,
-            long pause,
-            double temperatureRatio,
-            double powerStd,
-            double powerMean,
-            double temperatureStd,
-            double temperatureMean) {
+    public MonitoringEventSource(int maxRackId,
+                                 long pause,
+                                 double temperatureRatio,
+                                 double powerStd,
+                                 double powerMean,
+                                 double temperatureStd,
+                                 double temperatureMean) {
         this.maxRackId = maxRackId;
         this.pause = pause;
         this.temperatureRatio = temperatureRatio;
@@ -78,12 +76,9 @@ public class MonitoringEventSource extends RichParallelSourceFunction<Monitoring
     public void run(SourceContext<MonitoringEvent> sourceContext) throws Exception {
         while (running) {
             MonitoringEvent monitoringEvent;
-
             final ThreadLocalRandom random = ThreadLocalRandom.current();
-
             if (shard > 0) {
                 int rackId = random.nextInt(shard) + offset;
-
                 if (random.nextDouble() >= temperatureRatio) {
                     double power = random.nextGaussian() * powerStd + powerMean;
                     monitoringEvent = new PowerEvent(rackId, power);
@@ -91,11 +86,8 @@ public class MonitoringEventSource extends RichParallelSourceFunction<Monitoring
                     double temperature = random.nextGaussian() * temperatureStd + temperatureMean;
                     monitoringEvent = new TemperatureEvent(rackId, temperature);
                 }
-
-
                 sourceContext.collect(monitoringEvent);
             }
-
             Thread.sleep(pause);
         }
     }
