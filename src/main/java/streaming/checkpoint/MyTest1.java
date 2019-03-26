@@ -2,7 +2,6 @@ package streaming.checkpoint;
 
 import org.apache.flink.api.common.functions.AggregateFunction;
 import org.apache.flink.api.common.functions.MapFunction;
-import org.apache.flink.api.common.functions.RuntimeContext;
 import org.apache.flink.api.common.state.ListState;
 import org.apache.flink.api.common.state.ListStateDescriptor;
 import org.apache.flink.api.java.tuple.Tuple;
@@ -24,12 +23,12 @@ import org.apache.flink.streaming.connectors.fs.bucketing.BucketingSink;
 import org.apache.flink.streaming.connectors.fs.bucketing.DateTimeBucketer;
 import org.apache.flink.util.Collector;
 import streaming.dashboard.GeneData;
-import streaming.window.HotItems;
 
 import javax.annotation.Nullable;
 import java.sql.Timestamp;
 import java.time.ZoneId;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class MyTest1 {
     public static void main(String[] args) throws Exception {
@@ -66,7 +65,7 @@ public class MyTest1 {
 
         //write to hdfs sink
         BucketingSink<UI> sink = new BucketingSink<>("hdfs://localhost/logs/");
-        sink.setUseTruncate(false);
+//        sink.setUseTruncate(false);
         sink.setBucketer(new DateTimeBucketer<UI>("yyyy-MM-dd--HH", ZoneId.of("UTC+8")));
         sink.setWriter(new StringWriter<UI>());
         sink.setBatchSize(1024 * 1024 * 10); // this is 10 MB,
