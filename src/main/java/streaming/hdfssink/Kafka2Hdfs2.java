@@ -51,12 +51,13 @@ public class Kafka2Hdfs2 {
 //		myConsumer.setStartFromLatest();
 
 
-        DataStream<String> ds = env.addSource(myConsumer);
+        DataStream<String> ds = env.addSource(myConsumer,"read from kafka");
 //        .map(new MapFunction<String, String>() {
 //            @Override
 //            public String map(String s) throws Exception {
 //                if (s.equals("value_8005001")) {
 //                    System.exit(0);
+
 //                }
 //
 //                return s;
@@ -65,7 +66,7 @@ public class Kafka2Hdfs2 {
 
 
         BucketingSink<String> sink = new BucketingSink<String>("hdfs://localhost/flink_data");
-        sink.setBucketer(new DateTimeBucketer<String>("yyyy-MM-dd--HH", ZoneId.of("UTC+8")));
+        sink.setBucketer(new DateTimeBucketer<String>("yyyy-MM-dd", ZoneId.of("UTC+8")));
         sink.setWriter(new StringWriter<String>());
         sink.setBatchSize(1024 * 1024 * 10); // this is 10 MB,
         sink.setBatchRolloverInterval(10 * 60 * 1000); // this is 3 mins

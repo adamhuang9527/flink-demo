@@ -48,6 +48,8 @@ public class StreamSql {
 							@Override
 							public long extractTimestamp(Tuple5<String, String, Long, String, String> element,
 									long previousElementTimestamp) {
+
+
 								return element.f2;
 							}
 
