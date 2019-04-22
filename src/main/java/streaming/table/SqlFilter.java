@@ -1,18 +1,15 @@
 package streaming.table;
 
 import org.apache.flink.api.common.functions.MapFunction;
-import org.apache.flink.api.java.tuple.Tuple4;
 import org.apache.flink.api.java.tuple.Tuple5;
-import org.apache.flink.api.java.typeutils.TupleTypeInfo;
 import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.AssignerWithPunctuatedWatermarks;
 import org.apache.flink.streaming.api.watermark.Watermark;
 import org.apache.flink.table.api.Table;
-import org.apache.flink.table.api.TableEnvironment;
-import org.apache.flink.table.api.Types;
 import org.apache.flink.table.api.java.StreamTableEnvironment;
+import org.apache.flink.types.Row;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import streaming.GeneUISource;
@@ -64,21 +61,23 @@ public class SqlFilter {
 							}
 						});
 
-		data.print();
 
-		StreamTableEnvironment tableEnv = TableEnvironment.getTableEnvironment(env);
-		Table table = tableEnv.fromDataStream(data, "province,id,datestamp,date,c, proctime.proctime, rowtime.rowtime");
+		StreamTableEnvironment tableEnv = StreamTableEnvironment.create(env);
+		Table table = tableEnv.fromDataStream(data, "province,id,datestamp,d,c, proctime.proctime, rowtime.rowtime");
 //		Table result = tableEnv.sqlQuery(
 //				"select province,TUMBLE_START(rowtime, INTERVAL '10' SECOND) as wStart, count(distinct id) as uv,count(id) as pv from "
 //						+ table + "  group by TUMBLE(rowtime, INTERVAL '10' SECOND) , province");
 
 
-		Table result  = tableEnv.sqlQuery("select province,id,date,c from " + table);
+//		Table result  = tableEnv.sqlQuery("select province,id,d,c from " + table);
+		Table result  = tableEnv.sqlQuery("select province,count(*) from " + table +" group by province");
 
-		TupleTypeInfo<Tuple4<String, String, String, String> > tupleType = new TupleTypeInfo<>(
-				Types.STRING(),
-				Types.STRING(),Types.STRING(),Types.STRING());
-		tableEnv.toAppendStream(result,tupleType).print();
+		tableEnv.toAppendStream(result, Row.class).print();
+
+//		TupleTypeInfo<Tuple4<String, String, String, String> > tupleType = new TupleTypeInfo<>(
+//				Types.STRING(),
+//				Types.STRING(),Types.STRING(),Types.STRING());
+//		tableEnv.toAppendStream(result,tupleType).print();
 
 //		tableEnv.toRetractStream(result, Result.class).print();
 		env.execute("StreamSql");

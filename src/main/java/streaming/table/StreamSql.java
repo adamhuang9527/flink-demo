@@ -8,7 +8,6 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.AssignerWithPunctuatedWatermarks;
 import org.apache.flink.streaming.api.watermark.Watermark;
 import org.apache.flink.table.api.Table;
-import org.apache.flink.table.api.TableEnvironment;
 import org.apache.flink.table.api.java.StreamTableEnvironment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -61,11 +60,15 @@ public class StreamSql {
 							}
 						});
 
-		StreamTableEnvironment tableEnv = TableEnvironment.getTableEnvironment(env);
+		StreamTableEnvironment tableEnv = StreamTableEnvironment.create(env);
+
+
 		Table table = tableEnv.fromDataStream(data, "province,id,datestamp,date,c, proctime.proctime, rowtime.rowtime");
 		Table result = tableEnv.sqlQuery(
 				"select province,TUMBLE_START(rowtime, INTERVAL '10' SECOND) as wStart, count(distinct id) as uv,count(id) as pv from "
 						+ table + "  group by TUMBLE(rowtime, INTERVAL '10' SECOND) , province");
+
+
 
 
 		tableEnv.toRetractStream(result, Result.class).print();
