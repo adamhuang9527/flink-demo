@@ -69,8 +69,14 @@ public class SqlFilter {
 //						+ table + "  group by TUMBLE(rowtime, INTERVAL '10' SECOND) , province");
 
 
-//		Table result  = tableEnv.sqlQuery("select province,id,d,c from " + table);
-		Table result  = tableEnv.sqlQuery("select province,count(*) from " + table +" group by province");
+
+
+
+		Table result  = tableEnv.sqlQuery("select province,id,d,c from " + table);
+//		Table result  = tableEnv.sqlQuery("select province,count(*) from " + table +" group by province");
+
+
+
 
 		tableEnv.toAppendStream(result, Row.class).print();
 
