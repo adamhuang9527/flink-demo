@@ -32,8 +32,8 @@ public class ExtSql {
         tableEnv.connect(
                 new Kafka()
                         .version("0.10")
-                        .topic("test4")
-                        .startFromEarliest()
+                        .topic("test5")
+                        .startFromLatest()
                         .property("bootstrap.servers", "localhost:9092")
                         .property("group.id", "mygroup")
         ).withFormat(new Json().failOnMissingField(false).deriveSchema())
@@ -56,8 +56,8 @@ public class ExtSql {
                 .registerTableSource("MyUserTable");
 
 
-//        Table result = tableEnv.sqlQuery("select * from MyUserTable");
-          Table result = tableEnv.sqlQuery("select clientIp,count(1) from MyUserTable group by clientIp");
+        Table result = tableEnv.sqlQuery("select * from MyUserTable");
+//          Table result = tableEnv.sqlQuery("select clientIp,count(1) from MyUserTable group by clientIp");
 //        Table result = tableEnv.sqlQuery("select clientIp,TUMBLE_START(rowtime, INTERVAL '10' SECOND) as wStart,count(1) from MyUserTable group by clientIp,TUMBLE(rowtime, INTERVAL '10' SECOND)");
 
 
