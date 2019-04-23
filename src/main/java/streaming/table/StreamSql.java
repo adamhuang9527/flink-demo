@@ -9,6 +9,7 @@ import org.apache.flink.streaming.api.functions.AssignerWithPunctuatedWatermarks
 import org.apache.flink.streaming.api.watermark.Watermark;
 import org.apache.flink.table.api.Table;
 import org.apache.flink.table.api.java.StreamTableEnvironment;
+import org.apache.flink.types.Row;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import streaming.GeneUISource;
@@ -64,14 +65,14 @@ public class StreamSql {
 
 
 		Table table = tableEnv.fromDataStream(data, "province,id,datestamp,date,c, proctime.proctime, rowtime.rowtime");
+//		Table result = tableEnv.sqlQuery(
+//				"select province,TUMBLE_START(rowtime, INTERVAL '10' SECOND) as wStart, count(distinct id) as uv,count(id) as pv from "
+//						+ table + "  group by TUMBLE(rowtime, INTERVAL '10' SECOND) , province");
+
 		Table result = tableEnv.sqlQuery(
-				"select province,TUMBLE_START(rowtime, INTERVAL '10' SECOND) as wStart, count(distinct id) as uv,count(id) as pv from "
-						+ table + "  group by TUMBLE(rowtime, INTERVAL '10' SECOND) , province");
+				"select * from "+ table);
 
-
-
-
-		tableEnv.toRetractStream(result, Result.class).print();
+		tableEnv.toRetractStream(result, Row.class).print();
 		env.execute("StreamSql");
 
 	}

@@ -2,10 +2,10 @@ package streaming.table.sink;
 
 import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.streaming.connectors.kafka.Kafka010TableSourceSinkFactory;
 import org.apache.flink.table.api.Types;
 import org.apache.flink.table.api.java.StreamTableEnvironment;
 import org.apache.flink.table.descriptors.*;
+import org.apache.flink.table.factories.StreamTableSinkFactory;
 import org.apache.flink.table.factories.TableFactoryService;
 import org.apache.flink.table.sinks.TableSink;
 
@@ -18,6 +18,11 @@ public class KafkaTableSink {
         env.enableCheckpointing(5000);
         env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
         StreamTableEnvironment tableEnv = StreamTableEnvironment.create(env);
+
+
+
+
+
         // declare the external system to connect to
         tableEnv.connect(
                 new Kafka()
@@ -53,28 +58,28 @@ public class KafkaTableSink {
                 .property("bootstrap.servers", "localhost:9092");
         StreamTableDescriptor std = new StreamTableDescriptor(tableEnv, kafka);
 
-        std.withFormat(new TestFormarDesc("json",1))
+        std.withFormat(new JsonFormarDesc("json",1))
                 .withSchema(
                         new Schema()
-                                .field("appName", Types.STRING())
-//                                .field("clientIp", Types.STRING())
+//                                .field("appName", Types.STRING())
+                                .field("clientIp", Types.STRING())
                                 .field("rowtime", Types.SQL_TIMESTAMP()))
                 .inAppendMode();
 
 
         Map<String, String> propertiesMap = std.toProperties();
-        TableSink<?> actualSink = TableFactoryService.find(Kafka010TableSourceSinkFactory.class, propertiesMap)
+        TableSink<?> actualSink = TableFactoryService.find(StreamTableSinkFactory.class, propertiesMap)
                 .createStreamTableSink(propertiesMap);
 
         tableEnv.registerTableSink("mysink", actualSink);
 
-        tableEnv.sqlUpdate("insert into mysink select appName,rowtime from MyUserTable");
+        tableEnv.sqlUpdate("insert into mysink select clientIp,rowtime from MyUserTable");
 
         env.execute();
 
     }
 
-     static class TestFormarDesc extends FormatDescriptor {
+     static class JsonFormarDesc extends FormatDescriptor {
 
          /**
           * Constructs a {@link FormatDescriptor}.
@@ -82,7 +87,7 @@ public class KafkaTableSink {
           * @param type    string that identifies this format
           * @param version property version for backwards compatibility
           */
-         public TestFormarDesc(String type, int version) {
+         public JsonFormarDesc(String type, int version) {
              super(type, version);
          }
 
@@ -91,6 +96,31 @@ public class KafkaTableSink {
 
             DescriptorProperties  properties = new DescriptorProperties();
 
+            properties.putString("format.derive-schema", "true");
+
+            return properties.asMap();
+        }
+    }
+
+
+    static class CsvFormarDesc extends FormatDescriptor {
+
+        /**
+         * Constructs a {@link FormatDescriptor}.
+         *
+         * @param type    string that identifies this format
+         * @param version property version for backwards compatibility
+         */
+        public CsvFormarDesc(String type, int version) {
+            super(type, version);
+        }
+
+        @Override
+        protected Map<String, String> toFormatProperties() {
+
+            DescriptorProperties  properties = new DescriptorProperties();
+
+            properties.putString("format.field-delimiter", "#");
             properties.putString("format.derive-schema", "true");
 
             return properties.asMap();
