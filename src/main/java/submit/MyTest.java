@@ -32,7 +32,6 @@ public class MyTest {
 
         ds.print();
 
-        env
 
         System.out.println(new JSONGenerator(env.getStreamGraph()).getJSON());
 

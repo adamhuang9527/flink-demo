@@ -19,7 +19,7 @@ public class SubmitJobFlink {
 //        Configuration configuration = GlobalConfiguration.loadConfiguration(configurationDirectory);
 
         Configuration configuration = new Configuration();
-        configuration.setString("jobmanager.rpc.address", "");
+        configuration.setString("jobmanager.rpc.address", "tv6-dmomachines-dmotest-01");
         configuration.setString("jobmanager.rpc.port", "39130");
         configuration.setString("rest.port", "45037");
 

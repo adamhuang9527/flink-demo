@@ -1,6 +1,7 @@
 package submit;
 
-import org.apache.flink.client.deployment.ClusterDeploymentException;
+import org.apache.commons.cli.CommandLine;
+import org.apache.flink.api.common.JobID;
 import org.apache.flink.client.deployment.ClusterSpecification;
 import org.apache.flink.client.program.ClusterClient;
 import org.apache.flink.client.program.PackagedProgram;
@@ -10,7 +11,9 @@ import org.apache.flink.client.program.rest.RestClusterClient;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.configuration.GlobalConfiguration;
 import org.apache.flink.runtime.jobgraph.JobGraph;
+import org.apache.flink.runtime.jobgraph.SavepointRestoreSettings;
 import org.apache.flink.runtime.jobmaster.JobResult;
+import org.apache.flink.runtime.rest.messages.job.JobDetailsInfo;
 import org.apache.flink.yarn.YarnClusterDescriptor;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
@@ -23,26 +26,51 @@ import java.net.URL;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 
 public class SubmitJobPerJobYarnFromJar {
 
 
-    public static void main(String[] args) throws FileNotFoundException, ProgramInvocationException, ClusterDeploymentException, ExecutionException, InterruptedException {
+    public static void main(String[] args) throws Exception {
 
+
+        //设置参数
         InputParams options = new InputParams();
-        options.setJarFilePath("/Users/user/work/flink/examples/streaming/SocketWindowWordCount.jar");
-        String programArgs[] = new String[]{"--port", "9999"};
+        options.setJarFilePath("/Users/user/work/flink/examples/streaming/WordCount.jar");
+//        String programArgs[] = new String[]{"--port", "9999"};
+//        options.setProgramArgs(programArgs);
+        options.setParallelism(2);
 
-        options.setProgramArgs(programArgs);
-
+        //start
         SubmitJobPerJobYarnFromJar submit = new SubmitJobPerJobYarnFromJar();
-        PackagedProgram program = submit.buildProgram(options);
+        Result result = submit.submitJob(options);
 
+        //response
+
+        ClusterClient clusterClient = result.getClusterClient();
+        JobID jobId = result.getJobId();
+
+
+        ApplicationId applicationId = clusterClient.getClusterId();
+        final RestClusterClient<ApplicationId> restClusterClient = (RestClusterClient<ApplicationId>) clusterClient;
+        JobDetailsInfo jobDetailsInfo = restClusterClient.getJobDetails(jobId).get();
+        final CompletableFuture<JobResult> jobResultCompletableFuture = restClusterClient.requestJobResult(jobId);
+        final JobResult jobResult = jobResultCompletableFuture.get();
+        System.out.println(jobResult.getApplicationStatus());
+//        restClusterClient.cancel(jobId);
+        System.out.println("shutdown ");
+
+    }
+
+
+    Result submitJob(InputParams options) throws FileNotFoundException, ProgramInvocationException {
+        PackagedProgram program = this.buildProgram(options);
         String configurationDirectory = "/Users/user/work/flink/conf";
         Configuration configuration = GlobalConfiguration.loadConfiguration(configurationDirectory);
 
-        JobGraph jobGraph = PackagedProgramUtils.createJobGraph(program, configuration, 1);
+        int parallelism = options.getParallelism() == null ? 1 : options.getParallelism();
+
+        JobGraph jobGraph = PackagedProgramUtils.createJobGraph(program, configuration, parallelism);
+
 
         YarnClient yarnClient = YarnClient.createYarnClient();
         YarnConfiguration yarnConfiguration = new YarnConfiguration();
@@ -71,8 +99,7 @@ public class SubmitJobPerJobYarnFromJar {
                 .setSlotsPerTaskManager(1)
                 .createClusterSpecification();
 
-        yarnClusterDescriptor.setName("myjob");
-
+        yarnClusterDescriptor.setName(options.getJobName());
 
 
         ClusterClient<ApplicationId> clusterClient = yarnClusterDescriptor.deployJobCluster(clusterSpecification,
@@ -80,23 +107,37 @@ public class SubmitJobPerJobYarnFromJar {
                 false);
 
 
-        ApplicationId applicationId = clusterClient.getClusterId();
+        return new Result(jobGraph.getJobID(), clusterClient);
 
-
-        System.out.println(applicationId);
-        final RestClusterClient<ApplicationId> restClusterClient = (RestClusterClient<ApplicationId>) clusterClient;
-
-        final CompletableFuture<JobResult> jobResultCompletableFuture = restClusterClient.requestJobResult(jobGraph.getJobID());
-
-
-        final JobResult jobResult = jobResultCompletableFuture.get();
-
-
-        System.out.println(jobResult.getApplicationStatus());
     }
 
+    public static class Result {
+        private JobID jobId;
+        private ClusterClient clusterClient;
 
-    PackagedProgram buildProgram(InputParams options) throws FileNotFoundException, ProgramInvocationException {
+        public Result(JobID jobId, ClusterClient clusterClient) {
+            this.jobId = jobId;
+            this.clusterClient = clusterClient;
+        }
+
+        public JobID getJobId() {
+            return jobId;
+        }
+
+        public void setJobId(JobID jobId) {
+            this.jobId = jobId;
+        }
+
+        public ClusterClient getClusterClient() {
+            return clusterClient;
+        }
+
+        public void setClusterClient(ClusterClient clusterClient) {
+            this.clusterClient = clusterClient;
+        }
+    }
+
+    private PackagedProgram buildProgram(InputParams options) throws FileNotFoundException, ProgramInvocationException {
         String[] programArgs = options.getProgramArgs();
         String jarFilePath = options.getJarFilePath();
         List<URL> classpaths = options.getClasspaths();
@@ -121,10 +162,20 @@ public class SubmitJobPerJobYarnFromJar {
                 new PackagedProgram(jarFile, classpaths, programArgs) :
                 new PackagedProgram(jarFile, classpaths, entryPointClass, programArgs);
 
-//        program.setSavepointRestoreSettings(options.getSavepointRestoreSettings());
+        program.setSavepointRestoreSettings(this.createSavepointRestoreSettings(options));
 
         return program;
     }
 
+
+    private SavepointRestoreSettings createSavepointRestoreSettings(InputParams options) {
+        if (options.getFromSavepoint() != null) {
+            String savepointPath = options.getFromSavepoint();
+            boolean allowNonRestoredState = options.isAllowNonRestoredState();
+            return SavepointRestoreSettings.forPath(savepointPath, allowNonRestoredState);
+        } else {
+            return SavepointRestoreSettings.none();
+        }
+    }
 
 }
