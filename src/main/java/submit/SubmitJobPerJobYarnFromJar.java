@@ -1,7 +1,7 @@
 package submit;
 
-import org.apache.commons.cli.CommandLine;
 import org.apache.flink.api.common.JobID;
+import org.apache.flink.client.deployment.ClusterDeploymentException;
 import org.apache.flink.client.deployment.ClusterSpecification;
 import org.apache.flink.client.program.ClusterClient;
 import org.apache.flink.client.program.PackagedProgram;
@@ -12,7 +12,6 @@ import org.apache.flink.configuration.Configuration;
 import org.apache.flink.configuration.GlobalConfiguration;
 import org.apache.flink.runtime.jobgraph.JobGraph;
 import org.apache.flink.runtime.jobgraph.SavepointRestoreSettings;
-import org.apache.flink.runtime.jobmaster.JobResult;
 import org.apache.flink.runtime.rest.messages.job.JobDetailsInfo;
 import org.apache.flink.yarn.YarnClusterDescriptor;
 import org.apache.hadoop.fs.Path;
@@ -22,11 +21,16 @@ import org.apache.hadoop.yarn.conf.YarnConfiguration;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 
+
+/**
+ *
+ */
 public class SubmitJobPerJobYarnFromJar {
 
 
@@ -35,10 +39,20 @@ public class SubmitJobPerJobYarnFromJar {
 
         //设置参数
         InputParams options = new InputParams();
-        options.setJarFilePath("/Users/user/work/flink/examples/streaming/WordCount.jar");
+        options.setJarFilePath("/Users/user/git/flink-platform/target/flink-platform-1.0.jar");
+
+
+        List<URL> classpaths = new ArrayList<>();
+        classpaths.add(new URL("file:///Users/user/git/flink-udf/target/flink-udf-1.0.jar"));
+
+        options.setClasspaths(classpaths);
+
 //        String programArgs[] = new String[]{"--port", "9999"};
 //        options.setProgramArgs(programArgs);
-        options.setParallelism(2);
+//        options.setEntryPointClass("streaming.table.StreamSQLExample");
+        options.setParallelism(1);
+        options.setJobName("myflinkjob-udf");
+
 
         //start
         SubmitJobPerJobYarnFromJar submit = new SubmitJobPerJobYarnFromJar();
@@ -50,24 +64,32 @@ public class SubmitJobPerJobYarnFromJar {
         JobID jobId = result.getJobId();
 
 
-        ApplicationId applicationId = clusterClient.getClusterId();
+
+
+        ApplicationId applicationId = (ApplicationId) clusterClient.getClusterId();
         final RestClusterClient<ApplicationId> restClusterClient = (RestClusterClient<ApplicationId>) clusterClient;
         JobDetailsInfo jobDetailsInfo = restClusterClient.getJobDetails(jobId).get();
-        final CompletableFuture<JobResult> jobResultCompletableFuture = restClusterClient.requestJobResult(jobId);
-        final JobResult jobResult = jobResultCompletableFuture.get();
-        System.out.println(jobResult.getApplicationStatus());
-//        restClusterClient.cancel(jobId);
-        System.out.println("shutdown ");
+
+        System.out.println(jobDetailsInfo);
+
+
+//        final CompletableFuture<JobResult> jobResultCompletableFuture = restClusterClient.requestJobResult(jobId);
+//        final JobResult jobResult = jobResultCompletableFuture.get();
+//        System.out.println(jobResult.getApplicationStatus());
+////        restClusterClient.cancel(jobId);
+//        System.out.println("shutdown ");
 
     }
 
 
-    Result submitJob(InputParams options) throws FileNotFoundException, ProgramInvocationException {
+    public Result submitJob(InputParams options) throws FileNotFoundException, ProgramInvocationException, ClusterDeploymentException, URISyntaxException {
         PackagedProgram program = this.buildProgram(options);
         String configurationDirectory = "/Users/user/work/flink/conf";
         Configuration configuration = GlobalConfiguration.loadConfiguration(configurationDirectory);
 
         int parallelism = options.getParallelism() == null ? 1 : options.getParallelism();
+
+
 
         JobGraph jobGraph = PackagedProgramUtils.createJobGraph(program, configuration, parallelism);
 
@@ -76,6 +98,7 @@ public class SubmitJobPerJobYarnFromJar {
         YarnConfiguration yarnConfiguration = new YarnConfiguration();
         yarnClient.init(yarnConfiguration);
         yarnClient.start();
+
 
         YarnClusterDescriptor yarnClusterDescriptor = new YarnClusterDescriptor(
                 configuration,
@@ -88,28 +111,34 @@ public class SubmitJobPerJobYarnFromJar {
         yarnClusterDescriptor.addShipFiles(Arrays.asList(flinkLibFolder.listFiles()));
 
 
-        File testingJar = new File(options.getJarFilePath());
-        jobGraph.addJar(new org.apache.flink.core.fs.Path(testingJar.toURI()));
+        for (URL url : options.getClasspaths()){
+            jobGraph.addJar(new org.apache.flink.core.fs.Path(url.toURI()));
+        }
 
+
+
+        int masterMemoryMB = options.getMasterMemoryMB() == 0 ? 1024 : options.getMasterMemoryMB();
+        int taskManagerMemoryMB = options.getTaskManagerMemoryMB() == 0 ? 1024 : options.getTaskManagerMemoryMB();
+        int numberTaskManagers = options.getNumberTaskManagers() == 0 ? 1 : options.getNumberTaskManagers();
+        int slotsPerTaskManager = options.getSlotsPerTaskManager() == 0 ? 1 : options.getSlotsPerTaskManager();
         ClusterSpecification clusterSpecification = new ClusterSpecification.ClusterSpecificationBuilder()
-                .setMasterMemoryMB(1024)
-                .setTaskManagerMemoryMB(
-                        1024)
-                .setNumberTaskManagers(1)
-                .setSlotsPerTaskManager(1)
+                .setMasterMemoryMB(masterMemoryMB)
+                .setTaskManagerMemoryMB(taskManagerMemoryMB)
+                .setNumberTaskManagers(numberTaskManagers)
+                .setSlotsPerTaskManager(slotsPerTaskManager)
                 .createClusterSpecification();
 
         yarnClusterDescriptor.setName(options.getJobName());
 
-
         ClusterClient<ApplicationId> clusterClient = yarnClusterDescriptor.deployJobCluster(clusterSpecification,
                 jobGraph,
-                false);
+                true);
 
 
         return new Result(jobGraph.getJobID(), clusterClient);
 
     }
+
 
     public static class Result {
         private JobID jobId;
@@ -177,5 +206,7 @@ public class SubmitJobPerJobYarnFromJar {
             return SavepointRestoreSettings.none();
         }
     }
+
+
 
 }
