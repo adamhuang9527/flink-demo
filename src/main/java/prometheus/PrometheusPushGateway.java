@@ -13,7 +13,7 @@ public class PrometheusPushGateway {
 
 
     public static void main(String[] args) throws IOException {
-        PushGateway pushGateway = new PushGateway("10.160.85.185:9091");
+        PushGateway pushGateway = new PushGateway("");
 
 
 //        pushGateway.delete("myJob93f5684cdfbad8fddaedbd5c0184cf96");

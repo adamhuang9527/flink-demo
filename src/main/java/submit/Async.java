@@ -19,7 +19,7 @@ public class Async {
         asyncClient.start();
 
 
-//        String trackingUrl = "http://10.160.85.185:8888/cluster/app/application_1556176336087_0052";
+//        String trackingUrl = "http://:8888/cluster/app/application_1556176336087_0052";
 
 //        RegisterApplicationMasterResponse response = asyncClient
 //                .registerApplicationMaster("10.160.85.185", 8032, "");
