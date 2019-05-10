@@ -10,10 +10,6 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.AssignerWithPunctuatedWatermarks;
 import org.apache.flink.streaming.api.functions.ProcessFunction;
 import org.apache.flink.streaming.api.watermark.Watermark;
-import org.apache.flink.streaming.connectors.fs.StringWriter;
-import org.apache.flink.streaming.connectors.fs.bucketing.BucketingSink;
-import org.apache.flink.streaming.connectors.fs.bucketing.DateTimeBucketer;
-import org.apache.flink.table.api.Table;
 import org.apache.flink.table.api.TableEnvironment;
 import org.apache.flink.table.api.java.StreamTableEnvironment;
 import org.apache.flink.table.sinks.CsvTableSink;
@@ -23,7 +19,6 @@ import org.apache.flink.util.OutputTag;
 
 import javax.annotation.Nullable;
 import java.sql.Timestamp;
-import java.time.ZoneId;
 
 
 /**
@@ -31,7 +26,7 @@ import java.time.ZoneId;
  * <p>
  * 功能
  * 1。source从流接收数据，从主流数据中引出side outout进行计算，消费同一个流，避免多次接入，消耗网略
- * 2.通过table和sql计算pv,平均响应时间,错误率（status不等于200的占比）
+ * 2. 通过table和sql计算pv,平均响应时间,错误率（status不等于200的占比）
  * 3。原始数据输出到hdfs。
  * 4，side output的结果数据发送到csv sink
  */
@@ -84,38 +79,46 @@ public class Dashboard {
         tenv.registerDataStream("log", dataStream, "traceid,userid,timestamp,status,restime,proctime.proctime,rowtime.rowtime");
 
 
-        String sql = "select pv,avg_res_time,round(CAST(errorcount AS DOUBLE)/pv,2) as errorRate,(starttime + interval '8' hour ) as stime from (select count(*) as pv,AVG(restime) as avg_res_time  ," +
-                "sum(case when status = 200 then 0 else 1 end) as errorcount, " +
-                "TUMBLE_START(rowtime,INTERVAL '1' SECOND)  as starttime " +
-                "from log where status <> 404 group by TUMBLE(rowtime,INTERVAL '1' SECOND) )";
-
-        Table result1 = tenv.sqlQuery(sql);
-
 
         //write to csv sink
 
         TableSink csvSink = new CsvTableSink("/Users/user/work/flink_data/log", "|");
         String[] fieldNames = {"a", "b", "c", "d"};
         TypeInformation[] fieldTypes = {Types.LONG, Types.INT, Types.DOUBLE, Types.SQL_TIMESTAMP};
+
         tenv.registerTableSink("CsvSinkTable", fieldNames, fieldTypes, csvSink);
-        result1.insertInto("CsvSinkTable");
+
+
+        String sql = "insert into CsvSinkTable select pv,avg_res_time,round(CAST(errorcount AS DOUBLE)/pv,2) as errorRate," +
+                "(starttime + interval '8' hour ) as stime " +
+                "from (select count(*) as pv,AVG(restime) as avg_res_time  ," +
+                "sum(case when status = 200 then 0 else 1 end) as errorcount, " +
+                "TUMBLE_START(rowtime,INTERVAL '5' SECOND)  as starttime " +
+                "from log where status <> 404 group by TUMBLE(rowtime,INTERVAL '5' SECOND) )";
+
+       tenv.sqlUpdate(sql);
+
+
+
+
+//        result1.insertInto("CsvSinkTable");
 
 
         //write to hdfs sink
-        BucketingSink<Tuple5<String, Integer, Long, Integer, Integer>> sink = new BucketingSink<>("hdfs://localhost/logs/");
-        sink.setUseTruncate(false);
-//        sink.setBucketer(new Bucketer<UI>() {
-//            @Override
-//            public Path getBucketPath(Clock clock, Path basePath, UI element) {
-//                String newDateTimeString = dateTimeFormatter.format(Instant.ofEpochMilli(element.getTimestamp()));
-//                return new Path(basePath + "/" + newDateTimeString);
-//            }
-//        });
-        sink.setBucketer(new DateTimeBucketer<Tuple5<String, Integer, Long, Integer, Integer>>("yyyy-MM-dd--HHmm", ZoneId.of("UTC+8")));
-        sink.setWriter(new StringWriter<Tuple5<String, Integer, Long, Integer, Integer>>());
-        sink.setBatchSize(1024 * 1024 * 10); // this is 10 MB,
-        sink.setBatchRolloverInterval(60 * 1000); // this is 1 min
-        ds.addSink(sink);
+//        BucketingSink<Tuple5<String, Integer, Long, Integer, Integer>> sink = new BucketingSink<>("hdfs://localhost/logs/");
+//        sink.setUseTruncate(false);
+////        sink.setBucketer(new Bucketer<UI>() {
+////            @Override
+////            public Path getBucketPath(Clock clock, Path basePath, UI element) {
+////                String newDateTimeString = dateTimeFormatter.format(Instant.ofEpochMilli(element.getTimestamp()));
+////                return new Path(basePath + "/" + newDateTimeString);
+////            }
+////        });
+//        sink.setBucketer(new DateTimeBucketer<Tuple5<String, Integer, Long, Integer, Integer>>("yyyy-MM-dd--HHmm", ZoneId.of("UTC+8")));
+//        sink.setWriter(new StringWriter<Tuple5<String, Integer, Long, Integer, Integer>>());
+//        sink.setBatchSize(1024 * 1024 * 10); // this is 10 MB,
+//        sink.setBatchRolloverInterval(60 * 1000); // this is 1 min
+//        ds.addSink(sink);
 
 
 //        tenv.toAppendStream(result1, Result.class).addSink(sink);

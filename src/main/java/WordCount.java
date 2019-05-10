@@ -69,6 +69,7 @@ public class WordCount {
 			counts.print();
 		}
 
+
 //		System.out.println(env.getExecutionPlan());
 		
 	}

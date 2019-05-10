@@ -65,12 +65,11 @@ public class StreamSql {
 
 
 		Table table = tableEnv.fromDataStream(data, "province,id,datestamp,date,c, proctime.proctime, rowtime.rowtime");
-//		Table result = tableEnv.sqlQuery(
-//				"select province,TUMBLE_START(rowtime, INTERVAL '10' SECOND) as wStart, count(distinct id) as uv,count(id) as pv from "
-//						+ table + "  group by TUMBLE(rowtime, INTERVAL '10' SECOND) , province");
-
 		Table result = tableEnv.sqlQuery(
-				"select * from "+ table);
+				"select province,TUMBLE_START(rowtime, INTERVAL '10' SECOND) as wStart, count(distinct id) as uv,count(id) as pv from "
+						+ table + "  group by TUMBLE(rowtime, INTERVAL '10' SECOND) , province");
+
+//		Table result = tableEnv.sqlQuery("select * from "+ table);
 
 		tableEnv.toRetractStream(result, Row.class).print();
 		env.execute("StreamSql");

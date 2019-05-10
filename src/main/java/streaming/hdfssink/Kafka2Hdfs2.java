@@ -65,6 +65,7 @@ public class Kafka2Hdfs2 {
 //        });
 
 
+
         BucketingSink<String> sink = new BucketingSink<String>("hdfs://localhost/flink_data");
         sink.setBucketer(new DateTimeBucketer<String>("yyyy-MM-dd", ZoneId.of("UTC+8")));
         sink.setWriter(new StringWriter<String>());
@@ -73,7 +74,10 @@ public class Kafka2Hdfs2 {
 
         ds.addSink(sink);
         ds.print();
-        env.execute();
+
+        System.out.println(env.getExecutionPlan());
+//        env.execute();
     }
+
 
 }

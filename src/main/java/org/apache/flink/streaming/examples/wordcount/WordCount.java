@@ -59,7 +59,6 @@ public class WordCount {
 		// set up the execution environment
 		final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
-
 		// make parameters available in the web interface
 		env.getConfig().setGlobalJobParameters(params);
 

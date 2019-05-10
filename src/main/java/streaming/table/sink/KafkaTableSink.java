@@ -20,9 +20,6 @@ public class KafkaTableSink {
         StreamTableEnvironment tableEnv = StreamTableEnvironment.create(env);
 
 
-
-
-
         // declare the external system to connect to
         tableEnv.connect(
                 new Kafka()
@@ -51,50 +48,48 @@ public class KafkaTableSink {
                 .registerTableSource("MyUserTable");
 
 
-
         Kafka kafka = new Kafka()
                 .version("0.10")
                 .topic("kafkaSink")
                 .property("bootstrap.servers", "localhost:9092");
         StreamTableDescriptor std = new StreamTableDescriptor(tableEnv, kafka);
 
-        std.withFormat(new JsonFormarDesc("json",1))
+        std.withFormat(new JsonFormarDesc("json", 1))
                 .withSchema(
                         new Schema()
 //                                .field("appName", Types.STRING())
                                 .field("clientIp", Types.STRING())
-                                .field("rowtime", Types.SQL_TIMESTAMP()))
-                .inAppendMode();
+                                .field("count", Types.LONG()))
+                .inRetractMode();
 
 
         Map<String, String> propertiesMap = std.toProperties();
-        TableSink<?> actualSink = TableFactoryService.find(StreamTableSinkFactory.class, propertiesMap)
-                .createStreamTableSink(propertiesMap);
-
+        StreamTableSinkFactory factory = TableFactoryService.find(StreamTableSinkFactory.class, propertiesMap);
+        TableSink actualSink = factory.createStreamTableSink(propertiesMap);
         tableEnv.registerTableSink("mysink", actualSink);
+        tableEnv.sqlUpdate("insert into mysink select clientIp,count(1) from MyUserTable group by clientIp");
 
-        tableEnv.sqlUpdate("insert into mysink select clientIp,rowtime from MyUserTable");
 
         env.execute();
 
     }
 
-     static class JsonFormarDesc extends FormatDescriptor {
+    static class JsonFormarDesc extends FormatDescriptor {
 
-         /**
-          * Constructs a {@link FormatDescriptor}.
-          *
-          * @param type    string that identifies this format
-          * @param version property version for backwards compatibility
-          */
-         public JsonFormarDesc(String type, int version) {
-             super(type, version);
-         }
+        /**
+         * Constructs a {@link FormatDescriptor}.
+         *
+         * @param type    string that identifies this format
+         * @param version property version for backwards compatibility
+         */
+        public JsonFormarDesc(String type, int version) {
+            super(type, version);
+        }
 
-         @Override
+        @Override
         protected Map<String, String> toFormatProperties() {
 
-            DescriptorProperties  properties = new DescriptorProperties();
+            DescriptorProperties properties = new DescriptorProperties();
 
             properties.putString("format.derive-schema", "true");
 
@@ -118,7 +113,7 @@ public class KafkaTableSink {
         @Override
         protected Map<String, String> toFormatProperties() {
 
-            DescriptorProperties  properties = new DescriptorProperties();
+            DescriptorProperties properties = new DescriptorProperties();
 
             properties.putString("format.field-delimiter", "#");
             properties.putString("format.derive-schema", "true");
