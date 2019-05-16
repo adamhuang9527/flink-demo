@@ -32,7 +32,7 @@ public class ExtSql {
         tableEnv.connect(
                 new Kafka()
                         .version("0.10")
-                        .topic("test5")
+                        .topic("test3")
                         .startFromLatest()
                         .property("bootstrap.servers", "localhost:9092")
                         .property("group.id", "mygroup")

@@ -38,7 +38,7 @@ public class HdfsTableSink implements AppendStreamTableSink {
     @Override
     public void emitDataStream(DataStream dataStream) {
 
-        BucketingSink<String> sink = new BucketingSink<String>("hdfs://localhost/flink_data");
+        BucketingSink<String> sink = new BucketingSink<String>("hdfs:///flink-data");
         sink.setBucketer(new DateTimeBucketer<String>("yyyy-MM-dd", ZoneId.of("UTC+8")));
         sink.setWriter(new StringWriter<String>());
         sink.setBatchSize(1024 * 1024 * 10); // this is 10 MB,
@@ -79,14 +79,14 @@ public class HdfsTableSink implements AppendStreamTableSink {
 
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.enableCheckpointing(5000);
-        env.setStateBackend(new RocksDBStateBackend("hdfs://localhost/checkpoints-data/"));
+        env.setStateBackend(new RocksDBStateBackend("hdfs:///checkpoints-data/"));
         env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
         StreamTableEnvironment tableEnv = StreamTableEnvironment.create(env);
         // declare the external system to connect to
         tableEnv.connect(
                 new Kafka()
                         .version("0.10")
-                        .topic("test6")
+                        .topic("test3")
                         .startFromLatest()
                         .property("bootstrap.servers", "localhost:9092")
                         .property("group.id", "mygroup")
@@ -118,6 +118,8 @@ public class HdfsTableSink implements AppendStreamTableSink {
                 .field("rowtime", Types.SQL_TIMESTAMP())
                 .build();
         HdfsTableSink sink = new HdfsTableSink(schema);
+
+
         tableEnv.registerTableSink("myHdfsSink",sink);
 
 

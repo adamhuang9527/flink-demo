@@ -66,6 +66,8 @@ public class KafkaTableSink {
         Map<String, String> propertiesMap = std.toProperties();
         StreamTableSinkFactory factory = TableFactoryService.find(StreamTableSinkFactory.class, propertiesMap);
         TableSink actualSink = factory.createStreamTableSink(propertiesMap);
+
+
         tableEnv.registerTableSink("mysink", actualSink);
         tableEnv.sqlUpdate("insert into mysink select clientIp,count(1) from MyUserTable group by clientIp");
 
