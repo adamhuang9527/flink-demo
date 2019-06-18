@@ -1,4 +1,4 @@
-package streaming.table;
+package table;
 
 public class KafkaTableSql {
 //    public static void main(String[] args) {

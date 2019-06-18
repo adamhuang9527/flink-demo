@@ -1,13 +1,10 @@
-package streaming.table.sink;
+package table;
 
 import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.table.api.Types;
 import org.apache.flink.table.api.java.StreamTableEnvironment;
 import org.apache.flink.table.descriptors.*;
-import org.apache.flink.table.factories.StreamTableSinkFactory;
-import org.apache.flink.table.factories.TableFactoryService;
-import org.apache.flink.table.sinks.TableSink;
 
 import java.util.Map;
 
@@ -24,14 +21,13 @@ public class KafkaTableSink {
         tableEnv.connect(
                 new Kafka()
                         .version("0.10")
-                        .topic("test6")
+                        .topic("test3")
                         .startFromLatest()
                         .property("bootstrap.servers", "localhost:9092")
                         .property("group.id", "mygroup")
         ).withFormat(new Json().failOnMissingField(false).deriveSchema())
                 // declare the schema of the table
-                .withSchema(
-                        new Schema()
+         .withSchema(new Schema()
                                 .field("appName", Types.STRING())
                                 .field("clientIp", Types.STRING())
                                 .field("rowtime", Types.SQL_TIMESTAMP())
@@ -43,33 +39,49 @@ public class KafkaTableSink {
                 )
 
                 // specify the update-mode for streaming tables
-                .inAppendMode()
+          .inAppendMode()
                 // register as source, sink, or both and under a name
-                .registerTableSource("MyUserTable");
+          .registerTableSource("MyUserTable");
 
 
-        Kafka kafka = new Kafka()
-                .version("0.10")
-                .topic("kafkaSink")
-                .property("bootstrap.servers", "localhost:9092");
-        StreamTableDescriptor std = new StreamTableDescriptor(tableEnv, kafka);
 
-        std.withFormat(new JsonFormarDesc("json", 1))
-                .withSchema(
-                        new Schema()
-//                                .field("appName", Types.STRING())
+
+//        Kafka kafka = new Kafka()
+//                .version("0.10")
+//                .topic("kafkaSink")
+//                .property("bootstrap.servers", "localhost:9092");
+//        StreamTableDescriptor std = new StreamTableDescriptor(tableEnv, kafka);
+//        std.withFormat(new JsonFormarDesc("json", 1))
+//                .withSchema(
+//                        new Schema()
+////                                .field("appName", Types.STRING())
+//                                .field("clientIp", Types.STRING())
+//                                .field("count", Types.LONG()))
+//                .inRetractMode();
+//        Map<String, String> propertiesMap = std.toProperties();
+//        StreamTableSinkFactory factory = TableFactoryService.find(StreamTableSinkFactory.class, propertiesMap);
+//        TableSink actualSink = factory.createStreamTableSink(propertiesMap);
+//        tableEnv.registerTableSink("mysink", actualSink);
+
+
+        char c = '|';
+        tableEnv.connect(new Kafka()
+                    .version("0.10")
+                    .topic("kafkaSink")
+                    .property("bootstrap.servers", "localhost:9092"))
+                .withFormat(new Json())
+//                .withFormat(new Json().failOnMissingField(false).deriveSchema())
+                .withSchema(new Schema()
+                                .field("appName", Types.STRING())
                                 .field("clientIp", Types.STRING())
-                                .field("count", Types.LONG()))
-                .inRetractMode();
+                                .field("count", Types.SQL_TIMESTAMP()))
+                .inAppendMode()
+                .registerTableSink("mysink");
 
 
-        Map<String, String> propertiesMap = std.toProperties();
-        StreamTableSinkFactory factory = TableFactoryService.find(StreamTableSinkFactory.class, propertiesMap);
-        TableSink actualSink = factory.createStreamTableSink(propertiesMap);
 
 
-        tableEnv.registerTableSink("mysink", actualSink);
-        tableEnv.sqlUpdate("insert into mysink select clientIp,count(1) from MyUserTable group by clientIp");
+        tableEnv.sqlUpdate("insert into mysink select * from MyUserTable");
 
 
         env.execute();

@@ -1,4 +1,4 @@
-package streaming.table;
+package table;
 
 import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;

@@ -1,78 +1,86 @@
-package streaming.table;
+package table;
 
-import org.apache.flink.api.common.functions.MapFunction;
-import org.apache.flink.api.java.tuple.Tuple5;
+import org.apache.flink.api.common.functions.FlatMapFunction;
+import org.apache.flink.api.common.serialization.SimpleStringSchema;
+import org.apache.flink.api.java.tuple.Tuple4;
 import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.AssignerWithPunctuatedWatermarks;
 import org.apache.flink.streaming.api.watermark.Watermark;
+import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer010;
 import org.apache.flink.table.api.Table;
+import org.apache.flink.table.api.TableEnvironment;
 import org.apache.flink.table.api.java.StreamTableEnvironment;
-import org.apache.flink.types.Row;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import streaming.GeneUISource;
+import org.apache.flink.util.Collector;
 
 import java.sql.Timestamp;
-import java.util.List;
-
+import java.util.Properties;
 
 /**
  * 
  * @author user
  *
  */
-public class StreamSql {
-
-	private static final Logger LOG = LoggerFactory.getLogger(StreamSql.class);
+public class SqlWindow {
 
 	public static void main(String[] args) throws Exception {
 
-		LOG.info("StreamSql start ");
 		StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 		env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
+		Properties properties = new Properties();
+		properties.setProperty("bootstrap.servers", "localhost:9092");
+		properties.setProperty("group.id", "test");
 
-		DataStream<List> ds = env.addSource(new GeneUISource());
-		DataStream<Tuple5<String, String, Long, String, String>> data = ds
-				.map(new MapFunction<List, Tuple5<String, String, Long, String, String>>() {
+		FlinkKafkaConsumer010<String> myConsumer = new FlinkKafkaConsumer010<>("ui2", new SimpleStringSchema(),
+				properties);
+//		myConsumer.setStartFromEarliest();
+
+		DataStream<String> ds = env.addSource(myConsumer);
+		DataStream<Tuple4<String, String, Long, Integer>> data = ds
+				.flatMap(new FlatMapFunction<String, Tuple4<String, String, Long, Integer>>() {
+
 					@Override
-					public Tuple5<String, String, Long, String, String> map(List value) throws Exception {
-						return new Tuple5<String, String, Long, String, String>(value.get(0).toString(),
-								value.get(1).toString(), Long.parseLong(value.get(2).toString()),
-								value.get(3).toString(), value.get(4).toString());
+					public void flatMap(String value, Collector<Tuple4<String, String, Long, Integer>> out)
+							throws Exception {
+						if (null != value) {
+							String ss[] = value.split("\t");
+							if (ss.length == 3) {
+								String pro = ss[0];
+								String id = ss[1];
+								Long time = Long.parseLong(ss[2]);
+								out.collect(new Tuple4<String, String, Long, Integer>(pro, id, time, 1));
+							}
+						}
+
 					}
 				}).assignTimestampsAndWatermarks(
-						new AssignerWithPunctuatedWatermarks<Tuple5<String, String, Long, String, String>>() {
+						new AssignerWithPunctuatedWatermarks<Tuple4<String, String, Long, Integer>>() {
 
 							@Override
-							public long extractTimestamp(Tuple5<String, String, Long, String, String> element,
+							public long extractTimestamp(Tuple4<String, String, Long, Integer> element,
 									long previousElementTimestamp) {
-
-
 								return element.f2;
 							}
 
 							@Override
-							public Watermark checkAndGetNextWatermark(
-									Tuple5<String, String, Long, String, String> lastElement, long extractedTimestamp) {
-								// TODO Auto-generated method stub
+							public Watermark checkAndGetNextWatermark(Tuple4<String, String, Long, Integer> lastElement,
+									long extractedTimestamp) {
 								return new Watermark(lastElement.f2);
 							}
 						});
 
-		StreamTableEnvironment tableEnv = StreamTableEnvironment.create(env);
+		StreamTableEnvironment tableEnv = TableEnvironment.getTableEnvironment(env);
 
-
-		Table table = tableEnv.fromDataStream(data, "province,id,datestamp,date,c, proctime.proctime, rowtime.rowtime");
+		Table table = tableEnv.fromDataStream(data, "province,id,time,c, proctime.proctime, rowtime.rowtime");
 		Table result = tableEnv.sqlQuery(
 				"select province,TUMBLE_START(rowtime, INTERVAL '10' SECOND) as wStart, count(distinct id) as uv,count(id) as pv from "
 						+ table + "  group by TUMBLE(rowtime, INTERVAL '10' SECOND) , province");
 
-//		Table result = tableEnv.sqlQuery("select * from "+ table);
+		tableEnv.toRetractStream(result, Result.class).print();
 
-		tableEnv.toRetractStream(result, Row.class).print();
-		env.execute("StreamSql");
+		
+		env.execute();
 
 	}
 

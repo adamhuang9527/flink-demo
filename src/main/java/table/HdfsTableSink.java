@@ -1,4 +1,4 @@
-package streaming.table.sink;
+package table;
 
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.contrib.streaming.state.RocksDBStateBackend;
@@ -12,10 +12,7 @@ import org.apache.flink.table.api.TableSchema;
 import org.apache.flink.table.api.Types;
 import org.apache.flink.table.api.ValidationException;
 import org.apache.flink.table.api.java.StreamTableEnvironment;
-import org.apache.flink.table.descriptors.Json;
-import org.apache.flink.table.descriptors.Kafka;
-import org.apache.flink.table.descriptors.Rowtime;
-import org.apache.flink.table.descriptors.Schema;
+import org.apache.flink.table.descriptors.*;
 import org.apache.flink.table.sinks.AppendStreamTableSink;
 import org.apache.flink.table.sinks.TableSink;
 import org.apache.flink.types.Row;
@@ -111,16 +108,21 @@ public class HdfsTableSink implements AppendStreamTableSink {
 
 
 
+        char c = 0x01;
+        tableEnv.connect(new FileSystem().path("file:///tmp/flink-data/"))
+                .withFormat(new OldCsv().fieldDelimiter("|")
+                                        .field("appName", Types.STRING())
+                                        .field("clientIp", Types.STRING())
+                                        .field("rowtime", Types.SQL_TIMESTAMP()))
+                .withSchema(new Schema()
+                        .field("appName", Types.STRING())
+                        .field("clientIp", Types.STRING())
+                        .field("rowtime", Types.SQL_TIMESTAMP()))
+                .inAppendMode()
+                .registerTableSink("myHdfsSink");
 
-        TableSchema schema = TableSchema.builder()
-                .field("appName", Types.STRING())
-                .field("clientIp", Types.STRING())
-                .field("rowtime", Types.SQL_TIMESTAMP())
-                .build();
-        HdfsTableSink sink = new HdfsTableSink(schema);
-
-
-        tableEnv.registerTableSink("myHdfsSink",sink);
+//        HdfsTableSink sink = new HdfsTableSink(schema);
+//        tableEnv.registerTableSink("myHdfsSink", sink);
 
 
         tableEnv.sqlUpdate("insert into myHdfsSink select * from MyUserTable");
