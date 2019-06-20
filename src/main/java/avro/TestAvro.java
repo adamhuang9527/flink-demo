@@ -1,5 +1,6 @@
 package avro;
 
+import com.alibaba.fastjson.JSONObject;
 import org.apache.avro.file.DataFileReader;
 import org.apache.avro.file.DataFileWriter;
 import org.apache.avro.io.*;
@@ -29,6 +30,7 @@ import java.util.concurrent.TimeUnit;
 
 public class TestAvro {
     DataFileWriter<Address> fileWriter;
+
     @Before
     public void init() throws IOException {
         DatumWriter<Address> writer = new SpecificDatumWriter<>();
@@ -36,6 +38,54 @@ public class TestAvro {
         fileWriter.create(Address.getClassSchema(), new File("/tmp/Address.avro"));
 
     }
+
+
+    @Test
+    public void testProcJson() throws IOException {
+
+
+        Properties props = new Properties();
+        props.put("bootstrap.servers", "localhost:9092");
+
+
+        props.put("acks", "all");
+        props.put("retries", 0);
+        props.put("batch.size", 16384);
+        props.put("linger.ms", 1);
+        props.put("buffer.memory", 33554432);
+        props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
+        props.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
+        //生产者发送消息
+        String topic = "kafkaSourceJson";
+        Producer<String, String> procuder = new KafkaProducer<>(props);
+
+
+        for (int i = 1; i <= 1000000; i++) {
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            if (i % 100 == 0) {
+                System.out.println("i is " + i);
+            }
+
+            JSONObject jsonObject = new JSONObject();
+            jsonObject.put("num", i);
+            jsonObject.put("city", "city" + i);
+            jsonObject.put("state", "state" + i);
+            jsonObject.put("zip", "zip");
+            jsonObject.put("street", "street");
+
+            ProducerRecord<String, String> msg = new ProducerRecord<>(topic, "num" + i, jsonObject.toJSONString());
+            procuder.send(msg);
+        }
+
+        System.out.println("send message over.");
+        procuder.close(100, TimeUnit.MILLISECONDS);
+
+    }
+
     @Test
     public void testProcAvro() throws IOException {
 
@@ -76,7 +126,7 @@ public class TestAvro {
             address.setStreet("street");
 
 
-            byte[]  result = serializeUser(address);
+            byte[] result = serializeUser(address);
 
             ProducerRecord<byte[], byte[]> msg = new ProducerRecord<>(topic, ("key" + i).getBytes(), result);
             procuder.send(msg);
@@ -133,7 +183,7 @@ public class TestAvro {
         String path = "/tmp/aaa.avro"; // avro文件存放目录
         DatumWriter<Address> userDatumWriter = new SpecificDatumWriter<>(Address.class);
         DataFileWriter<Address> dataFileWriter = new DataFileWriter<>(userDatumWriter);
-        dataFileWriter.create(address.getSchema(),  new File(path));
+        dataFileWriter.create(address.getSchema(), new File(path));
         dataFileWriter.append(address);
         dataFileWriter.close();
     }
@@ -148,7 +198,7 @@ public class TestAvro {
 
         Address address = new Address();
         address.setNum(1);
-        address.setCity("city" );
+        address.setCity("city");
         address.setState("state");
         address.setZip("zip001");
         address.setStreet("street");
@@ -160,8 +210,9 @@ public class TestAvro {
 
     @Test
     public void readFromFile() throws IOException {
+        String path ="/tmp/flink-data/json-avro/2019-05-29--12/.part-3-0.inprogress.f501956e-5c49-45d6-9f7a-a2aa5fbfd073";
         DatumReader<Address> reader = new SpecificDatumReader<>();
-        DataFileReader<Address> dataFileReader = new DataFileReader<>(new File("/tmp/flink-data/avro/2019-05-29--10/.part-1-0.inprogress.562a3959-1db8-4a19-98ac-b17cf8f2d3fa"), reader);
+        DataFileReader<Address> dataFileReader = new DataFileReader<>(new File(path), reader);
         Address user = null;
         while (dataFileReader.hasNext()) {
             user = dataFileReader.next();
@@ -176,7 +227,7 @@ public class TestAvro {
         Address address = new Address();
 
         address.setNum(1);
-        address.setCity("city" );
+        address.setCity("city");
         address.setState("state");
         address.setZip("zip001");
         address.setStreet("street");
@@ -185,7 +236,7 @@ public class TestAvro {
         System.out.println(deserializedUser.getNum());
     }
 
-    private  byte[] serializeUser(Address user) throws IOException {
+    private byte[] serializeUser(Address user) throws IOException {
         DatumWriter<Address> userDatumWriter = new SpecificDatumWriter<>(Address.class);
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         BinaryEncoder binaryEncoder = EncoderFactory.get().directBinaryEncoder(outputStream, null);
