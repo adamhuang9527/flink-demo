@@ -29,7 +29,7 @@ public class Kafka2Hdfs2 {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.enableCheckpointing(5000);
 
-        env.setStateBackend(new RocksDBStateBackend("hdfs://localhost/checkpoints-data/"));
+        env.setStateBackend(new RocksDBStateBackend("hdfs:///checkpoints-data/"));
 
 
         CheckpointConfig config = env.getCheckpointConfig();
@@ -41,11 +41,11 @@ public class Kafka2Hdfs2 {
 
 
         Properties properties = new Properties();
-        properties.setProperty("bootstrap.servers", "localhost:9092");
+        properties.setProperty("bootstrap.servers", "localhost:9092,localhost:9093");
         properties.setProperty("group.id", "test");
 
 
-        FlinkKafkaConsumer010<String> myConsumer = new FlinkKafkaConsumer010<>("test1", new SimpleStringSchema(),
+        FlinkKafkaConsumer010<String> myConsumer = new FlinkKafkaConsumer010<>("partition_test", new SimpleStringSchema(),
                 properties);
 //		myConsumer.setStartFromEarliest();
 //		myConsumer.setStartFromLatest();
@@ -66,17 +66,17 @@ public class Kafka2Hdfs2 {
 
 
 
-        BucketingSink<String> sink = new BucketingSink<String>("hdfs://localhost/flink_data");
+        BucketingSink<String> sink = new BucketingSink<String>("hdfs:///flink-data");
         sink.setBucketer(new DateTimeBucketer<String>("yyyy-MM-dd", ZoneId.of("UTC+8")));
         sink.setWriter(new StringWriter<String>());
         sink.setBatchSize(1024 * 1024 * 10); // this is 10 MB,
-        sink.setBatchRolloverInterval(10 * 60 * 1000); // this is 3 mins
+        sink.setBatchRolloverInterval(1 * 60 * 1000); // this is 3 mins
 
         ds.addSink(sink);
         ds.print();
 
-        System.out.println(env.getExecutionPlan());
-//        env.execute();
+//        System.out.println(env.getExecutionPlan());
+        env.execute();
     }
 
 

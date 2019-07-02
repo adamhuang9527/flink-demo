@@ -22,8 +22,8 @@ public class CancelJobFromYarn {
     private static final Logger LOG = LoggerFactory.getLogger(CancelJobFromYarn.class);
 
     public static void main(String[] args) throws FlinkException, CliArgsException {
-        String applicationId = "application_1557026877487_0044";
-        String jobId = "fcfba45612b4bc05754f6bb2815b1e8c";
+        String applicationId = "application_1557734072667_0003";
+        String jobId = "f9cb6b56d016e8bb84471d3543d3ac9a";
 
         String configurationDirectory = "/Users/user/work/flink/conf";
 

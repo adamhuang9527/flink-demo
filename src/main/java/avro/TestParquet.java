@@ -37,7 +37,7 @@ public class TestParquet {
 
     @Test
     public void test1() throws IOException {
-        AvroParquetReader<GenericRecord> reader = new AvroParquetReader<>(new Path("file:///Users/user/Documents/f84e39b3d561f42b-5529a34000000000_1424308034_data.1.parq"));
+        AvroParquetReader<GenericRecord> reader = new AvroParquetReader<>(new Path("file:///tmp/flink-data/parquet/2019-06-26-1124/part-3-1"));
         GenericRecord record;
         while ((record = reader.read()) != null) {
             System.out.println(record);

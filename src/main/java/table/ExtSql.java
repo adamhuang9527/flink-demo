@@ -1,5 +1,6 @@
 package table;
 
+import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.table.api.Table;
@@ -18,7 +19,6 @@ public class ExtSql {
     public static void main(String[] args) throws Exception {
 
 
-
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.enableCheckpointing(5000);
 //        env.setStateBackend(new RocksDBStateBackend("hdfs://localhost/checkpoints-data/"));
@@ -26,6 +26,8 @@ public class ExtSql {
         StreamTableEnvironment tableEnv = StreamTableEnvironment.create(env);
 
 
+        String fieldNames[] = new String[]{"price", "timeStamp"};
+        TypeInformation types[] = new TypeInformation[]{Types.INT(), Types.LONG()};
 
 
         // declare the external system to connect to
@@ -42,6 +44,8 @@ public class ExtSql {
                         new Schema()
                                 .field("appName", Types.STRING())
                                 .field("clientIp", Types.STRING())
+                                .field("charge", Types.ROW(fieldNames, types))
+//                                .field("charge", Types.ROW(fieldNames, types))
                                 .field("rowtime", Types.SQL_TIMESTAMP())
                                 .rowtime(new Rowtime()
                                         .timestampsFromField("uploadTime")
@@ -59,7 +63,6 @@ public class ExtSql {
         Table result = tableEnv.sqlQuery("select * from MyUserTable");
 //          Table result = tableEnv.sqlQuery("select clientIp,count(1) from MyUserTable group by clientIp");
 //        Table result = tableEnv.sqlQuery("select clientIp,TUMBLE_START(rowtime, INTERVAL '10' SECOND) as wStart,count(1) from MyUserTable group by clientIp,TUMBLE(rowtime, INTERVAL '10' SECOND)");
-
 
 
 //        TableSink sink = new CsvTableSink("/Users/user/work/flink_data/data",",");

@@ -18,7 +18,7 @@ public class GeneUISource implements SourceFunction<List> {
 	private Date date;
 	private AtomicLong al = new AtomicLong(0L);
 
-	String province[] = new String[] { "上海", "云南", "内蒙", "北京", "吉林", "四川", "国外", "天津", "宁夏", "安徽", "山东", "山西", "广东",
+	String province[] = new String[] { "shanghai", "yunnan", "内蒙", "北京", "吉林", "四川", "国外", "天津", "宁夏", "安徽", "山东", "山西", "广东",
 			"广西", "江苏", "江西", "河北", "河南", "浙江", "海南", "湖北", "湖南", "甘肃", "福建", "贵州", "辽宁", "重庆", "陕西", "香港", "黑龙江" };
 
 	@Override
@@ -31,7 +31,7 @@ public class GeneUISource implements SourceFunction<List> {
 			StringBuffer ss = new StringBuffer();
 			String pro = province[(int) (Math.random() * 29)];
 			list.add(pro);
-			String id = "id-" + (int) (Math.random() * 1000);
+			int id = (int) (Math.random() * 3);
 			list.add(id);
 			list.add(date.getTime());
 			list.add(sdf.format(date));

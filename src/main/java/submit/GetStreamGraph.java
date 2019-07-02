@@ -1,5 +1,7 @@
 package submit;
 
+import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSONObject;
 import org.apache.flink.api.common.functions.Function;
 import org.apache.flink.client.program.OptimizerPlanEnvironment;
 import org.apache.flink.client.program.PackagedProgram;
@@ -17,35 +19,53 @@ import org.apache.flink.streaming.api.operators.StreamOperator;
 import org.apache.flink.streaming.api.operators.StreamSink;
 import org.apache.flink.streaming.api.operators.StreamSource;
 import org.apache.flink.streaming.connectors.fs.bucketing.BucketingSink;
-import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer09;
-import org.apache.flink.streaming.connectors.kafka.FlinkKafkaProducerBase;
+import org.apache.flink.streaming.connectors.kafka.*;
+import org.apache.flink.streaming.connectors.kafka.internals.KafkaTopicsDescriptor;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.lang.reflect.Field;
 import java.net.URL;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 
 /**
  * 通过jar 包提取出source和sink信息
  */
 public class GetStreamGraph {
-    public static void main(String[] args) throws Exception {
+
+    private Map<Integer, List<Integer>> sinkSources = new HashMap<>();
+    private Map<Integer, Map<String, Object>> sourceSinkInfoMap = new HashMap<>();
+
+    public static void main(String[] args)  {
 
 
         InputParams options = new InputParams();
         options.setJarFilePath("/Users/user/git/flink-platform/target/flink-platform-1.0.jar");
+//        options.setEntryPointClass("platform.KafkaTest");
         options.setParallelism(1);
         options.setJobName("myflinkjob-udf");
+        options.setProgramArgs(new String[]{"select * from abc"});
+
+
 
         GetStreamGraph gsg = new GetStreamGraph();
-        gsg.getGraph(options);
+
+
+        ResultMsg resultMsg = null;
+        try {
+            resultMsg = gsg.getGraph(options);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        System.out.println(resultMsg);
 
 
     }
 
 
-    public void getGraph(InputParams options) throws Exception {
+    public ResultMsg getGraph(InputParams options) throws Exception {
+
 
         String configurationDirectory = "/Users/user/work/flink/conf";
         Configuration configuration = GlobalConfiguration.loadConfiguration(configurationDirectory);
@@ -56,43 +76,150 @@ public class GetStreamGraph {
         FlinkPlan flinkPlan = optimizerPlanEnvironment.getOptimizedPlan(program);
         if (flinkPlan instanceof StreamGraph) {
             StreamGraph streamGraph = (StreamGraph) flinkPlan;
+
+
+            String json = streamGraph.getStreamingPlanAsJSON();
+            getRelationship(json);
+
+
             Collection<Integer> sourceIds = streamGraph.getSourceIDs();
 
             for (Integer sourceid : sourceIds) {
+                sourceSinkInfoMap.put(sourceid, new HashMap<>());
+
+
                 StreamNode streamNode = streamGraph.getStreamNode(sourceid);
                 StreamOperator streamOperator = streamNode.getOperator();
                 if (streamOperator instanceof StreamSource) {
                     StreamSource streamSource = (StreamSource) streamOperator;
                     Function function = streamSource.getUserFunction();
-                    if (function instanceof FlinkKafkaConsumer09) {
-                        FlinkKafkaConsumer09 flinkKafkaConsumer09 = (FlinkKafkaConsumer09) function;
-                        System.out.println(flinkKafkaConsumer09);
+                    if (function instanceof FlinkKafkaConsumerBase) {
+                        Class class09 = null;
+
+                        if (function instanceof FlinkKafkaConsumer010) {
+                            class09 = function.getClass().getSuperclass();
+                        } else if (function instanceof FlinkKafkaConsumer09) {
+                            class09 = function.getClass();
+                        } else if (function instanceof FlinkKafkaConsumer011) {
+                            class09 = function.getClass().getSuperclass().getSuperclass();
+                        }
+
+
+                        Field propertiesField = class09.getDeclaredField("properties");
+                        propertiesField.setAccessible(true);
+                        Properties properties = (Properties) propertiesField.get(function);
+                        System.out.println(properties);
+
+                        Class class10 = class09.getSuperclass();
+                        Field fieldTopics = class10.getDeclaredField("topicsDescriptor");
+                        fieldTopics.setAccessible(true);
+                        KafkaTopicsDescriptor kafkaTopicsDescriptor = (KafkaTopicsDescriptor) fieldTopics.get(function);
+                        System.out.println(" topics " + kafkaTopicsDescriptor.getFixedTopics());
+
+                        sourceSinkInfoMap.get(sourceid).put("properties", properties);
+                        sourceSinkInfoMap.get(sourceid).put("topics", kafkaTopicsDescriptor.getFixedTopics());
+
                     }
+
+
                 }
             }
 
 
             Collection<Integer> sinkIDs = streamGraph.getSinkIDs();
-            for (Integer sourceid : sinkIDs) {
-                StreamNode streamNode = streamGraph.getStreamNode(sourceid);
+            for (Integer sinkId : sinkIDs) {
+
+                StreamNode streamNode = streamGraph.getStreamNode(sinkId);
                 StreamOperator streamOperator = streamNode.getOperator();
                 if (streamOperator instanceof StreamSink) {
                     StreamSink streamSink = (StreamSink) streamOperator;
                     Function function = streamSink.getUserFunction();
                     if (function instanceof BucketingSink) {
-                        BucketingSink bucketingSink = (BucketingSink) function;
-                        System.out.println(bucketingSink);
-                    } else if (function instanceof FlinkKafkaProducerBase) {
-                        FlinkKafkaProducerBase flinkKafkaProducerBase = (FlinkKafkaProducerBase) function;
-                        System.out.println(flinkKafkaProducerBase);
+                        sourceSinkInfoMap.put(sinkId, new HashMap<>());
+                        Field basePathField = function.getClass().getDeclaredField("basePath");
+                        basePathField.setAccessible(true);
+                        String basePath = (String) basePathField.get(function);
+                        System.out.println(basePath);
+
+                        sourceSinkInfoMap.get(sinkId).put("basePath", basePath);
+
+                    } else if (function instanceof FlinkKafkaProducerBase || function instanceof FlinkKafkaProducer011) {
+                        sourceSinkInfoMap.put(sinkId, new HashMap<>());
+                        Class baseClass = null;
+
+                        if (function instanceof FlinkKafkaProducer010) {
+                            baseClass = function.getClass().getSuperclass().getSuperclass();
+                        } else if (function instanceof FlinkKafkaProducer09) {
+                            baseClass = function.getClass().getSuperclass();
+                        } else if (function instanceof FlinkKafkaProducer011) {
+                            baseClass = function.getClass();
+
+                        }
+
+                        Field propertiesField = baseClass.getDeclaredField("producerConfig");
+                        propertiesField.setAccessible(true);
+                        Properties properties = (Properties) propertiesField.get(function);
+                        System.out.println(" sink properties:  " + properties);
+
+                        Field topicField = baseClass.getDeclaredField("defaultTopicId");
+                        topicField.setAccessible(true);
+                        String topic = (String) topicField.get(function);
+                        System.out.println("sink topic :" + topic);
+
+                        sourceSinkInfoMap.get(sinkId).put("properties", properties);
+                        sourceSinkInfoMap.get(sinkId).put("topic", topic);
                     }
-                    System.out.println(function);
                 }
 
             }
 
 
         }
+
+
+        ResultMsg result = new ResultMsg();
+        result.setSinkSources(sinkSources);
+        result.setSourceSinkInfoMap(sourceSinkInfoMap);
+
+        return result;
+    }
+
+
+    private void getParents(int sinkId, int currentId, Map<Integer, JSONObject> nodes) {
+        //递归结束
+        JSONObject node = nodes.get(currentId);
+        if (!node.containsKey("predecessors") && node.getString("pact").equals("Data Source")) {
+            sinkSources.get(sinkId).add(node.getInteger("id"));
+            return;
+        } else {
+            JSONArray predecessors = node.getJSONArray("predecessors");
+            for (int i = 0; i < predecessors.size(); i++) {
+                JSONObject predecessor = predecessors.getJSONObject(i);
+                int nid = predecessor.getInteger("id");
+                getParents(sinkId, nid, nodes);
+            }
+        }
+
+    }
+
+    private void getRelationship(String json) {
+        JSONObject jsonObject = JSONObject.parseObject(json);
+        JSONArray jsonArray = jsonObject.getJSONArray("nodes");
+
+        Map<Integer, JSONObject> nodes = new HashMap<>();
+        for (int i = 0; i < jsonArray.size(); i++) {
+            JSONObject node = jsonArray.getJSONObject(i);
+            nodes.put(node.getInteger("id"), node);
+
+
+            if ("Data Sink".equals(node.getString("pact"))) {
+                int sinkid = node.getInteger("id");
+                sinkSources.put(sinkid, new ArrayList<>());
+                getParents(sinkid, sinkid, nodes);
+            }
+        }
+
+
     }
 
     private PackagedProgram buildProgram(InputParams options) throws FileNotFoundException, ProgramInvocationException {
@@ -133,6 +260,28 @@ public class GetStreamGraph {
             return SavepointRestoreSettings.forPath(savepointPath, allowNonRestoredState);
         } else {
             return SavepointRestoreSettings.none();
+        }
+    }
+
+
+    public static class ResultMsg {
+        private Map<Integer, List<Integer>> sinkSources = new HashMap<>();
+        private Map<Integer, Map<String, Object>> sourceSinkInfoMap = new HashMap<>();
+
+        public Map<Integer, List<Integer>> getSinkSources() {
+            return sinkSources;
+        }
+
+        public void setSinkSources(Map<Integer, List<Integer>> sinkSources) {
+            this.sinkSources = sinkSources;
+        }
+
+        public Map<Integer, Map<String, Object>> getSourceSinkInfoMap() {
+            return sourceSinkInfoMap;
+        }
+
+        public void setSourceSinkInfoMap(Map<Integer, Map<String, Object>> sourceSinkInfoMap) {
+            this.sourceSinkInfoMap = sourceSinkInfoMap;
         }
     }
 }

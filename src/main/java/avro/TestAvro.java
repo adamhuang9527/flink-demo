@@ -210,7 +210,7 @@ public class TestAvro {
 
     @Test
     public void readFromFile() throws IOException {
-        String path ="/tmp/flink-data/json-avro/2019-05-29--12/.part-3-0.inprogress.f501956e-5c49-45d6-9f7a-a2aa5fbfd073";
+        String path ="/tmp/flink-data/json-avro/2019-06-24--10/part-3-6";
         DatumReader<Address> reader = new SpecificDatumReader<>();
         DataFileReader<Address> dataFileReader = new DataFileReader<>(new File(path), reader);
         Address user = null;

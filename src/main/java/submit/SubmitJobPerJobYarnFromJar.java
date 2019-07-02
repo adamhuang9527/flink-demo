@@ -40,7 +40,7 @@ public class SubmitJobPerJobYarnFromJar {
         //设置参数
         InputParams options = new InputParams();
         options.setJarFilePath("/Users/user/git/flink-platform/target/flink-platform-1.0.jar");
-
+        options.setNumberTaskManagers(3);
 
         List<URL> classpaths = new ArrayList<>();
         classpaths.add(new URL("file:///Users/user/git/flink-udf/target/flink-udf-1.0.jar"));
@@ -49,7 +49,7 @@ public class SubmitJobPerJobYarnFromJar {
 
 //        String programArgs[] = new String[]{"--port", "9999"};
 //        options.setProgramArgs(programArgs);
-//        options.setEntryPointClass("streaming.table.StreamSQLExample");
+        options.setEntryPointClass("platform.KafkaTest");
         options.setParallelism(1);
         options.setJobName("myflinkjob-udf");
 
@@ -63,7 +63,7 @@ public class SubmitJobPerJobYarnFromJar {
         ClusterClient clusterClient = result.getClusterClient();
         JobID jobId = result.getJobId();
 
-
+        System.out.println(jobId);
 
 
         ApplicationId applicationId = (ApplicationId) clusterClient.getClusterId();
@@ -92,7 +92,6 @@ public class SubmitJobPerJobYarnFromJar {
 
 
         JobGraph jobGraph = PackagedProgramUtils.createJobGraph(program, configuration, parallelism);
-
 
         YarnClient yarnClient = YarnClient.createYarnClient();
         YarnConfiguration yarnConfiguration = new YarnConfiguration();

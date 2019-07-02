@@ -14,7 +14,8 @@ import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindo
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer010;
 import org.apache.flink.util.Collector;
-import streaming.table.SqlWindow.Result;
+import table.SqlWindow;
+import table.SqlWindow.Result;
 
 import java.util.Properties;
 
@@ -72,7 +73,7 @@ public class WindowsPV {
 						});
 
 		data.keyBy(0).window(TumblingEventTimeWindows.of(Time.seconds(5))).aggregate(
-				new AggregateFunction<Tuple4<String, String, Long, Integer>, PVAccumulator, streaming.table.SqlWindow.Result>() {
+				new AggregateFunction<Tuple4<String, String, Long, Integer>, PVAccumulator, SqlWindow.Result>() {
 
 					@Override
 					public PVAccumulator createAccumulator() {
