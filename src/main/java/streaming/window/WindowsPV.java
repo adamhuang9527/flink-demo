@@ -20,85 +20,83 @@ import table.SqlWindow.Result;
 import java.util.Properties;
 
 /**
- * 
  * @author user
- *
  */
 public class WindowsPV {
 
-	public static void main(String[] args) throws Exception {
+    public static void main(String[] args) throws Exception {
 
-		StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-		env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
-		Properties properties = new Properties();
-		properties.setProperty("bootstrap.servers", "localhost:9092");
-		properties.setProperty("group.id", "test");
+        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+        env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
+        Properties properties = new Properties();
+        properties.setProperty("bootstrap.servers", "localhost:9092");
+        properties.setProperty("group.id", "test");
 
-		FlinkKafkaConsumer010<String> myConsumer = new FlinkKafkaConsumer010<>("ui2", new SimpleStringSchema(),
-				properties);
+        FlinkKafkaConsumer010<String> myConsumer = new FlinkKafkaConsumer010<>("ui2", new SimpleStringSchema(),
+                properties);
 //		myConsumer.setStartFromEarliest();
 
-		DataStream<String> ds = env.addSource(myConsumer);
-		DataStream<Tuple4<String, String, Long, Integer>> data = ds
-				.flatMap(new FlatMapFunction<String, Tuple4<String, String, Long, Integer>>() {
+        DataStream<String> ds = env.addSource(myConsumer);
+        DataStream<Tuple4<String, String, Long, Integer>> data = ds
+                .flatMap(new FlatMapFunction<String, Tuple4<String, String, Long, Integer>>() {
 
-					@Override
-					public void flatMap(String value, Collector<Tuple4<String, String, Long, Integer>> out)
-							throws Exception {
-						if (null != value) {
-							String ss[] = value.split("\t");
-							if (ss.length == 3) {
-								String pro = ss[0];
-								String id = ss[1];
-								Long time = Long.parseLong(ss[2]);
-								out.collect(new Tuple4<String, String, Long, Integer>(pro, id, time, 1));
-							}
-						}
+                    @Override
+                    public void flatMap(String value, Collector<Tuple4<String, String, Long, Integer>> out)
+                            throws Exception {
+                        if (null != value) {
+                            String ss[] = value.split("\t");
+                            if (ss.length == 3) {
+                                String pro = ss[0];
+                                String id = ss[1];
+                                Long time = Long.parseLong(ss[2]);
+                                out.collect(new Tuple4<String, String, Long, Integer>(pro, id, time, 1));
+                            }
+                        }
 
-					}
-				}).assignTimestampsAndWatermarks(
-						new AssignerWithPunctuatedWatermarks<Tuple4<String, String, Long, Integer>>() {
+                    }
+                }).assignTimestampsAndWatermarks(
+                        new AssignerWithPunctuatedWatermarks<Tuple4<String, String, Long, Integer>>() {
 
-							@Override
-							public long extractTimestamp(Tuple4<String, String, Long, Integer> element,
-									long previousElementTimestamp) {
-								return element.f2;
-							}
+                            @Override
+                            public long extractTimestamp(Tuple4<String, String, Long, Integer> element,
+                                                         long previousElementTimestamp) {
+                                return element.f2;
+                            }
 
-							@Override
-							public Watermark checkAndGetNextWatermark(Tuple4<String, String, Long, Integer> lastElement,
-									long extractedTimestamp) {
-								return new Watermark(lastElement.f2);
-							}
-						});
+                            @Override
+                            public Watermark checkAndGetNextWatermark(Tuple4<String, String, Long, Integer> lastElement,
+                                                                      long extractedTimestamp) {
+                                return new Watermark(lastElement.f2);
+                            }
+                        });
 
-		data.keyBy(0).window(TumblingEventTimeWindows.of(Time.seconds(5))).aggregate(
-				new AggregateFunction<Tuple4<String, String, Long, Integer>, PVAccumulator, SqlWindow.Result>() {
+        data.keyBy(0).window(TumblingEventTimeWindows.of(Time.seconds(5))).aggregate(
+                new AggregateFunction<Tuple4<String, String, Long, Integer>, PVAccumulator, SqlWindow.Result>() {
 
-					@Override
-					public PVAccumulator createAccumulator() {
-						// TODO Auto-generated method stub
-						return null;
-					}
+                    @Override
+                    public PVAccumulator createAccumulator() {
+                        // TODO Auto-generated method stub
+                        return null;
+                    }
 
-					@Override
-					public PVAccumulator add(Tuple4<String, String, Long, Integer> value, PVAccumulator accumulator) {
-						// TODO Auto-generated method stub
-						return null;
-					}
+                    @Override
+                    public PVAccumulator add(Tuple4<String, String, Long, Integer> value, PVAccumulator accumulator) {
+                        // TODO Auto-generated method stub
+                        return null;
+                    }
 
-					@Override
-					public Result getResult(PVAccumulator accumulator) {
-						// TODO Auto-generated method stub
-						return null;
-					}
+                    @Override
+                    public Result getResult(PVAccumulator accumulator) {
+                        // TODO Auto-generated method stub
+                        return null;
+                    }
 
-					@Override
-					public PVAccumulator merge(PVAccumulator a, PVAccumulator b) {
-						// TODO Auto-generated method stub
-						return null;
-					}
-				}).print();
+                    @Override
+                    public PVAccumulator merge(PVAccumulator a, PVAccumulator b) {
+                        // TODO Auto-generated method stub
+                        return null;
+                    }
+                }).print();
 
 //		DataStream<Tuple2<String, Integer>> result = data
 //				.map(new MapFunction<Tuple4<String, String, Long, Integer>, Tuple2<String, Integer>>() {
@@ -111,22 +109,22 @@ public class WindowsPV {
 //
 //		result.keyBy(0).window(TumblingEventTimeWindows.of(Time.seconds(5))).sum(1).print();
 
-		env.execute();
+        env.execute();
 
-	}
+    }
 
-	public static class PVAccumulator {
+    public static class PVAccumulator {
 
-	}
+    }
 
-	private static class MyFlatMapFunction extends RichFlatMapFunction<String, Tuple4<String, String, Long, Integer>> {
+    private static class MyFlatMapFunction extends RichFlatMapFunction<String, Tuple4<String, String, Long, Integer>> {
 
-		@Override
-		public void flatMap(String value, Collector<Tuple4<String, String, Long, Integer>> out) throws Exception {
-			// TODO Auto-generated method stub
-			
-		}
+        @Override
+        public void flatMap(String value, Collector<Tuple4<String, String, Long, Integer>> out) throws Exception {
+            // TODO Auto-generated method stub
+
+        }
 
 
-	}
+    }
 }

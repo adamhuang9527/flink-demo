@@ -10,7 +10,6 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.AssignerWithPunctuatedWatermarks;
 import org.apache.flink.streaming.api.functions.ProcessFunction;
 import org.apache.flink.streaming.api.watermark.Watermark;
-import org.apache.flink.table.api.TableEnvironment;
 import org.apache.flink.table.api.java.StreamTableEnvironment;
 import org.apache.flink.table.sinks.CsvTableSink;
 import org.apache.flink.table.sinks.TableSink;
@@ -18,6 +17,7 @@ import org.apache.flink.util.Collector;
 import org.apache.flink.util.OutputTag;
 
 import javax.annotation.Nullable;
+
 import java.sql.Timestamp;
 
 
@@ -75,7 +75,7 @@ public class Dashboard {
         DataStream<Tuple5<String, Integer, Long, Integer, Integer>> dataStream = mainDataStream.getSideOutput(outputTag);
 
 
-        StreamTableEnvironment tenv = TableEnvironment.getTableEnvironment(env);
+        StreamTableEnvironment tenv = StreamTableEnvironment.create(env);
         tenv.registerDataStream("log", dataStream, "traceid,userid,timestamp,status,restime,proctime.proctime,rowtime.rowtime");
 
 

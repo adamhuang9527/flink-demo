@@ -14,7 +14,7 @@ public class GeneData implements SourceFunction<String> {
 
     @Override
     public void run(SourceContext<String> ctx) throws Exception {
-
+        int count = 0;
         while (isRunning) {
             Thread.sleep((int) (Math.random() * 10));
             // traceid,userid,timestamp,status,response time
@@ -29,7 +29,8 @@ public class GeneData implements SourceFunction<String> {
             ss.append(",");
             ss.append(status[(int) (Math.random() * 4)]);
             ss.append(",");
-            ss.append((int) (Math.random() * 200));
+            ss.append(count++);
+//            ss.append((int) (Math.random() * 200));
 
             ctx.collect(ss.toString());
         }

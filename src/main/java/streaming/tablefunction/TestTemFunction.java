@@ -27,7 +27,7 @@ public class TestTemFunction {
     @Before
     public void init() {
         env = StreamExecutionEnvironment.getExecutionEnvironment();
-//        env.setParallelism(1);
+        env.setParallelism(1);
         tEnv = StreamTableEnvironment.create(env);
     }
 
@@ -119,7 +119,7 @@ public class TestTemFunction {
 
         tEnv.registerDataStream("userinfo", data, "province,id,datastamp,date,num");
 
-        String sql = "SELECT u.* , r.`role.age`  FROM userinfo  as u" +
+        String sql = "SELECT u.* , r.`role.age` ,r.`role.name` FROM userinfo  as u" +
                 " left JOIN LATERAL TABLE(hbase(u.id)) as r ON true";
         Table result = tEnv.sqlQuery(sql);
 

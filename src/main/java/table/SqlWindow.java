@@ -10,7 +10,6 @@ import org.apache.flink.streaming.api.functions.AssignerWithPunctuatedWatermarks
 import org.apache.flink.streaming.api.watermark.Watermark;
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer010;
 import org.apache.flink.table.api.Table;
-import org.apache.flink.table.api.TableEnvironment;
 import org.apache.flink.table.api.java.StreamTableEnvironment;
 import org.apache.flink.util.Collector;
 
@@ -70,7 +69,7 @@ public class SqlWindow {
 							}
 						});
 
-		StreamTableEnvironment tableEnv = TableEnvironment.getTableEnvironment(env);
+		StreamTableEnvironment tableEnv = StreamTableEnvironment.create(env);
 
 		Table table = tableEnv.fromDataStream(data, "province,id,time,c, proctime.proctime, rowtime.rowtime");
 		Table result = tableEnv.sqlQuery(

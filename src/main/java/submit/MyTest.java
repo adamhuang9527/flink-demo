@@ -11,7 +11,7 @@ public class MyTest {
 
         System.out.println(new File("/Users/user/git/flink-udf/target/flink-udf-1.0.jar").toURI());
 
-
+        System.out.println(111);
 
 //        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 //        env.enableCheckpointing(5000);

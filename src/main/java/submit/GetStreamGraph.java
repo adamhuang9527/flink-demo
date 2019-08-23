@@ -33,8 +33,8 @@ import java.util.*;
  */
 public class GetStreamGraph {
 
-    private Map<Integer, List<Integer>> sinkSources = new HashMap<>();
-    private Map<Integer, Map<String, Object>> sourceSinkInfoMap = new HashMap<>();
+//    private Map<Integer, List<Integer>> sinkSources = new HashMap<>();
+//    private Map<Integer, Map<String, Object>> sourceSinkInfoMap = new HashMap<>();
 
     public static void main(String[] args)  {
 
@@ -44,7 +44,7 @@ public class GetStreamGraph {
 //        options.setEntryPointClass("platform.KafkaTest");
         options.setParallelism(1);
         options.setJobName("myflinkjob-udf");
-        options.setProgramArgs(new String[]{"select * from abc"});
+        options.setProgramArgs(new String[]{"select * from OrderB"});
 
 
 
@@ -58,13 +58,17 @@ public class GetStreamGraph {
             e.printStackTrace();
         }
 
-        System.out.println(resultMsg);
+        System.out.println(resultMsg.getSinkSources());
+        System.out.println(resultMsg.getSourceSinkInfoMap());
 
 
     }
 
 
     public ResultMsg getGraph(InputParams options) throws Exception {
+
+        Map<Integer, List<Integer>> sinkSources = new HashMap<>();
+        Map<Integer, Map<String, Object>> sourceSinkInfoMap = new HashMap<>();
 
 
         String configurationDirectory = "/Users/user/work/flink/conf";
@@ -79,7 +83,7 @@ public class GetStreamGraph {
 
 
             String json = streamGraph.getStreamingPlanAsJSON();
-            getRelationship(json);
+            getRelationship(sinkSources,json);
 
 
             Collection<Integer> sourceIds = streamGraph.getSourceIDs();
@@ -185,7 +189,7 @@ public class GetStreamGraph {
     }
 
 
-    private void getParents(int sinkId, int currentId, Map<Integer, JSONObject> nodes) {
+    private void getParents(Map<Integer, List<Integer>> sinkSources,int sinkId, int currentId, Map<Integer, JSONObject> nodes) {
         //递归结束
         JSONObject node = nodes.get(currentId);
         if (!node.containsKey("predecessors") && node.getString("pact").equals("Data Source")) {
@@ -196,13 +200,13 @@ public class GetStreamGraph {
             for (int i = 0; i < predecessors.size(); i++) {
                 JSONObject predecessor = predecessors.getJSONObject(i);
                 int nid = predecessor.getInteger("id");
-                getParents(sinkId, nid, nodes);
+                getParents(sinkSources,sinkId, nid, nodes);
             }
         }
 
     }
 
-    private void getRelationship(String json) {
+    private void getRelationship(Map<Integer, List<Integer>> sinkSources,String json) {
         JSONObject jsonObject = JSONObject.parseObject(json);
         JSONArray jsonArray = jsonObject.getJSONArray("nodes");
 
@@ -215,7 +219,7 @@ public class GetStreamGraph {
             if ("Data Sink".equals(node.getString("pact"))) {
                 int sinkid = node.getInteger("id");
                 sinkSources.put(sinkid, new ArrayList<>());
-                getParents(sinkid, sinkid, nodes);
+                getParents(sinkSources,sinkid, sinkid, nodes);
             }
         }
 

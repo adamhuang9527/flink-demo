@@ -8,7 +8,6 @@ import org.apache.flink.table.api.Types;
 import org.apache.flink.table.api.java.StreamTableEnvironment;
 import org.apache.flink.table.descriptors.Json;
 import org.apache.flink.table.descriptors.Kafka;
-import org.apache.flink.table.descriptors.Rowtime;
 import org.apache.flink.table.descriptors.Schema;
 import org.apache.flink.types.Row;
 
@@ -45,12 +44,15 @@ public class ExtSql {
                                 .field("appName", Types.STRING())
                                 .field("clientIp", Types.STRING())
                                 .field("charge", Types.ROW(fieldNames, types))
+                                .field("uploadTime",Types.SQL_TIMESTAMP())
+                                .field("mytimestamp",Types.SQL_TIMESTAMP())
+//                                .field("mydate",Types.SQL_DATE())
 //                                .field("charge", Types.ROW(fieldNames, types))
-                                .field("rowtime", Types.SQL_TIMESTAMP())
-                                .rowtime(new Rowtime()
-                                        .timestampsFromField("uploadTime")
-                                        .watermarksPeriodicBounded(60000)
-                                )
+//                                .field("rowtime", Types.SQL_TIMESTAMP())
+//                                .rowtime(new Rowtime()
+//                                        .timestampsFromField("uploadTime")
+//                                        .watermarksPeriodicBounded(60000)
+//                                )
 
                 )
 

@@ -1,18 +1,23 @@
 package streaming.tablefunction;
 
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.java.tuple.Tuple4;
 import org.apache.flink.api.java.typeutils.RowTypeInfo;
 import org.apache.flink.table.functions.FunctionContext;
 import org.apache.flink.table.functions.TableFunction;
 import org.apache.flink.types.Row;
+
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.TableName;
-import org.apache.hadoop.hbase.client.*;
+import org.apache.hadoop.hbase.client.Connection;
+import org.apache.hadoop.hbase.client.ConnectionFactory;
+import org.apache.hadoop.hbase.client.Get;
+import org.apache.hadoop.hbase.client.Result;
+import org.apache.hadoop.hbase.client.Table;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -133,8 +138,13 @@ public class HbaseTableFunction extends TableFunction<Row> {
 
             for (Tuple4<byte[], byte[], TypeInformation<?>, Integer> qualifier : qualifierList) {
                 byte[] value = result.getValue(qualifier.f0, qualifier.f1);
-                Object obj = HBaseTypeUtils.deserializeToObject(value, HBaseTypeUtils.getTypeIndex(qualifier.f2.getTypeClass()), "UTF-8");
-                row.setField(qualifier.f3, obj);
+                if(value != null){
+                    Object obj = HBaseTypeUtils.deserializeToObject(value, HBaseTypeUtils.getTypeIndex(qualifier.f2.getTypeClass()), "UTF-8");
+                    row.setField(qualifier.f3, obj);
+                }else{
+                    row.setField(qualifier.f3, null);
+                }
+
             }
 
         }

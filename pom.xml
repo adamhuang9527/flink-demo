@@ -16,14 +16,17 @@
     <groupId>Flink-demo</groupId>
     <artifactId>Flink-demo</artifactId>
     <version>1.0-SNAPSHOT</version>
-    <packaging>jar</packaging>
+    <modules>
+        <module>bucket-filesystem-sql</module>
+    </modules>
+    <packaging>pom</packaging>
 
     <name>Flink Quickstart Job</name>
     <url>http://www.myorganization.org</url>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <flink.version>1.8.0</flink.version>
+        <flink.version>1.9.0</flink.version>
         <java.version>1.8</java.version>
         <hadoop.version>2.8.2</hadoop.version>
         <scala.binary.version>2.12</scala.binary.version>
@@ -110,6 +113,12 @@
         </dependency>
 
         <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>flink-jdbc_${scala.binary.version}</artifactId>
+            <version>${flink.version}</version>
+        </dependency>
+
+        <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-log4j12</artifactId>
             <version>1.7.7</version>
@@ -187,7 +196,7 @@
 
         <dependency>
             <groupId>org.apache.flink</groupId>
-            <artifactId>flink-parquet</artifactId>
+            <artifactId>flink-parquet_${scala.binary.version}</artifactId>
             <version>${flink.version}</version>
         </dependency>
 

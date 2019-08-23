@@ -31,7 +31,7 @@ public class GeneUISource implements SourceFunction<List> {
 			StringBuffer ss = new StringBuffer();
 			String pro = province[(int) (Math.random() * 29)];
 			list.add(pro);
-			int id = (int) (Math.random() * 3);
+			int id = (int) (Math.random() * 5);
 			list.add(id);
 			list.add(date.getTime());
 			list.add(sdf.format(date));

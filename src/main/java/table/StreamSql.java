@@ -5,8 +5,6 @@ import org.apache.flink.api.java.tuple.Tuple5;
 import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.streaming.api.functions.AssignerWithPunctuatedWatermarks;
-import org.apache.flink.streaming.api.watermark.Watermark;
 import org.apache.flink.table.api.Table;
 import org.apache.flink.table.api.java.StreamTableEnvironment;
 import org.apache.flink.types.Row;
@@ -34,6 +32,7 @@ public class StreamSql {
 		env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
 
 		DataStream<List> ds = env.addSource(new GeneUISource());
+//		ds.print();
 		DataStream<Tuple5<String, String, Long, String, String>> data = ds
 				.map(new MapFunction<List, Tuple5<String, String, Long, String, String>>() {
 					@Override
@@ -42,35 +41,37 @@ public class StreamSql {
 								value.get(1).toString(), Long.parseLong(value.get(2).toString()),
 								value.get(3).toString(), value.get(4).toString());
 					}
-				}).assignTimestampsAndWatermarks(
-						new AssignerWithPunctuatedWatermarks<Tuple5<String, String, Long, String, String>>() {
-
-							@Override
-							public long extractTimestamp(Tuple5<String, String, Long, String, String> element,
-									long previousElementTimestamp) {
-
-
-								return element.f2;
-							}
-
-							@Override
-							public Watermark checkAndGetNextWatermark(
-									Tuple5<String, String, Long, String, String> lastElement, long extractedTimestamp) {
-								// TODO Auto-generated method stub
-								return new Watermark(lastElement.f2);
-							}
-						});
-
+				});
+//
+//				.assignTimestampsAndWatermarks(
+//						new AssignerWithPunctuatedWatermarks<Tuple5<String, String, Long, String, String>>() {
+//
+//							@Override
+//							public long extractTimestamp(Tuple5<String, String, Long, String, String> element,
+//									long previousElementTimestamp) {
+//
+//
+//								return element.f2;
+//							}
+//
+//							@Override
+//							public Watermark checkAndGetNextWatermark(
+//									Tuple5<String, String, Long, String, String> lastElement, long extractedTimestamp) {
+//								// TODO Auto-generated method stub
+//								return new Watermark(lastElement.f2);
+//							}
+//						});
+//
 		StreamTableEnvironment tableEnv = StreamTableEnvironment.create(env);
-
-
-		Table table = tableEnv.fromDataStream(data, "province,id,datestamp,date,c, proctime.proctime, rowtime.rowtime");
-		Table result = tableEnv.sqlQuery(
-				"select province,TUMBLE_START(rowtime, INTERVAL '10' SECOND) as wStart, count(distinct id) as uv,count(id) as pv from "
-						+ table + "  group by TUMBLE(rowtime, INTERVAL '10' SECOND) , province");
-
-//		Table result = tableEnv.sqlQuery("select * from "+ table);
-
+//
+//
+		Table table = tableEnv.fromDataStream(data, "province,id,datestamp,date,c,p.proctime");
+////		Table result = tableEnv.sqlQuery(
+////				"select province,TUMBLE_START(rowtime, INTERVAL '10' SECOND) as wStart, count(distinct id) as uv,count(id) as pv from "
+////						+ table + "  group by TUMBLE(rowtime, INTERVAL '10' SECOND) , province");
+//
+		Table result = tableEnv.sqlQuery("select p from "+ table);
+//
 		tableEnv.toRetractStream(result, Row.class).print();
 		env.execute("StreamSql");
 

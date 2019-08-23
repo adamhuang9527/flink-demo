@@ -1,8 +1,4 @@
-package streaming;
-
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.concurrent.atomic.AtomicLong;
+package streaming.kafka;
 
 import org.apache.flink.api.common.serialization.SimpleStringSchema;
 import org.apache.flink.streaming.api.datastream.DataStream;
@@ -10,19 +6,26 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.source.SourceFunction;
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaProducer010;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Properties;
+import java.util.concurrent.atomic.AtomicLong;
+
 /**
  * write file data to kafka
- * 
- * @author user
  *
+ * @author user
  */
 public class GeneData2Kafka {
+
 	public static void main(String[] args) throws Exception {
 		StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
-		final String province[] = new String[] { "上海", "云南", "内蒙", "北京", "吉林", "四川", "国外", "天津", "宁夏", "安徽", "山东", "山西",
-				"广东", "广西", "江苏", "江西", "河北", "河南", "浙江", "海南", "湖北", "湖南", "甘肃", "福建", "贵州", "辽宁", "重庆", "陕西", "香港",
-				"黑龙江" };
+		final String province[] = new String[]{"上海", "云南", "内蒙", "北京", "吉林", "四川", "国外", "天津", "宁夏",
+				"安徽", "山东", "山西",
+				"广东", "广西", "江苏", "江西", "河北", "河南", "浙江", "海南", "湖北", "湖南", "甘肃", "福建", "贵州", "辽宁", "重庆",
+				"陕西", "香港",
+				"黑龙江"};
 
 		DataStream<String> source = env.addSource(new SourceFunction<String>() {
 
@@ -35,8 +38,9 @@ public class GeneData2Kafka {
 
 			@Override
 			public void run(SourceContext<String> ctx) throws Exception {
-				while (isRunning) {
-					Thread.sleep(10);
+				for (int i = 0; i < 100000; i++) {
+//				while (isRunning) {
+//					Thread.sleep(10);
 					date = new Date();
 					StringBuffer ss = new StringBuffer();
 					String pro = province[(int) (Math.random() * 29)];
@@ -56,11 +60,12 @@ public class GeneData2Kafka {
 			}
 		});
 
-//		source.print();
+		Properties producerConfig = new Properties();
+		producerConfig.put("bootstrap.servers", "localhost:9092");
+		producerConfig.put("compression.type", "gzip");
 
-		FlinkKafkaProducer010<String> myProducer = new FlinkKafkaProducer010<String>("localhost:9092", // broker list
-				args[0], // target topic
-				new SimpleStringSchema()); // serialization schema
+		FlinkKafkaProducer010<String> myProducer = new FlinkKafkaProducer010<>("test",
+				new SimpleStringSchema(), producerConfig);
 		source.addSink(myProducer);
 		env.execute("gene data to kafka");
 	}

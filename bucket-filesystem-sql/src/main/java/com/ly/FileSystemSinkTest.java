@@ -297,18 +297,18 @@ public class FileSystemSinkTest {
 					org.apache.flink.api.common.typeinfo.Types.STRING,
 					org.apache.flink.api.common.typeinfo.Types.LONG));
 		tEnv.registerDataStream("mysource", dataStream, "appName,clientIp,uploadTime");
-//		tEnv.connect(new Kafka()
-//			.version("0.10")
-//			.topic("test3")
-//			.property("bootstrap.servers", "localhost:9092"))
-//			.withFormat(new Json().deriveSchema())
-//			.withSchema(new Schema()
-//				.field("appName", Types.STRING())
-//				.field("clientIp", Types.STRING())
-//				.field("uploadTime", Types.LONG())
-//			)
-//			.inAppendMode()
-//			.registerTableSource("mysource");
+		tEnv.connect(new Kafka()
+			.version("0.10")
+			.topic("test3")
+			.property("bootstrap.servers", "localhost:9092"))
+			.withFormat(new Json().deriveSchema())
+			.withSchema(new Schema()
+				.field("appName", Types.STRING())
+				.field("clientIp", Types.STRING())
+				.field("uploadTime", Types.LONG())
+			)
+			.inAppendMode()
+			.registerTableSource("mysource");
 	}
 
 	private void registerAddresFromKafka() {

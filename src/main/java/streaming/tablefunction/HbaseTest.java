@@ -52,12 +52,30 @@ public class HbaseTest {
         tableDescriptorList.forEach(System.out::println);
     }
 
+    /**
+     * 获取多个版本的数据
+     * @throws IOException
+     */
     @Test
-    public void testGetData() throws IOException {
+    public void testGetDataVersions() throws IOException {
         TableName tableName = TableName.valueOf("t_user");
         Table table = connection.getTable(tableName);
-        Get get = new Get(Bytes.toBytes("admin"));
+        Get get = new Get(Bytes.toBytes("u001"));
+        get.readAllVersions();
+//        get.setTimeRange(0L,System.currentTimeMillis());
+        Result result = table.get(get);
 
+        List<Cell> cells = result.getColumnCells(Bytes.toBytes("role"),Bytes.toBytes("rolename"));
+
+        for (Cell c : cells) {
+            System.out.println(Bytes.toString(CellUtil.cloneRow(c))
+                    + "==> " + Bytes.toString(CellUtil.cloneFamily(c))
+                    + "{" + Bytes.toString(CellUtil.cloneQualifier(c))
+                    + ":" + Bytes.toString(CellUtil.cloneValue(c))
+                    + ", timestamp = " + c.getTimestamp() + "}"
+            );
+        }
+        System.out.println("-----------------");
     }
 
 
@@ -66,8 +84,9 @@ public class HbaseTest {
         TableName tableName = TableName.valueOf("t_user");
         Table table = connection.getTable(tableName);
 
+        long begin = System.currentTimeMillis();
         Get get = new Get
-                (Bytes.toBytes("u001"));
+                (Bytes.toBytes("3"));
         Result result = table.get(get);
 
         for (Cell c : result.rawCells()) {
@@ -77,6 +96,7 @@ public class HbaseTest {
                     + ":" + Bytes.toString(CellUtil.cloneValue(c)) + "}"
             );
         }
+        System.out.println(System.currentTimeMillis()-begin);
         System.out.println("-----------------");
     }
 
@@ -99,8 +119,8 @@ public class HbaseTest {
 
     @Test
     public void putData() throws IOException {
-        Put put = new Put(Bytes.toBytes(2));
-        put.addColumn(Bytes.toBytes("role"), Bytes.toBytes("name"), Bytes.toBytes("wangwu"));
+        Put put = new Put(Bytes.toBytes(3));
+//        put.addColumn(Bytes.toBytes("role"), Bytes.toBytes("rolename"), Bytes.toBytes("wangwu"));
         put.addColumn(Bytes.toBytes("role"), Bytes.toBytes("age"), Bytes.toBytes(30));
 
         TableName tableName = TableName.valueOf("t_user");

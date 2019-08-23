@@ -7,12 +7,10 @@ import org.apache.flink.client.program.ClusterClient;
 import org.apache.flink.client.program.PackagedProgram;
 import org.apache.flink.client.program.PackagedProgramUtils;
 import org.apache.flink.client.program.ProgramInvocationException;
-import org.apache.flink.client.program.rest.RestClusterClient;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.configuration.GlobalConfiguration;
 import org.apache.flink.runtime.jobgraph.JobGraph;
 import org.apache.flink.runtime.jobgraph.SavepointRestoreSettings;
-import org.apache.flink.runtime.rest.messages.job.JobDetailsInfo;
 import org.apache.flink.yarn.YarnClusterDescriptor;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
@@ -43,13 +41,13 @@ public class SubmitJobPerJobYarnFromJar {
         options.setNumberTaskManagers(3);
 
         List<URL> classpaths = new ArrayList<>();
-        classpaths.add(new URL("file:///Users/user/git/flink-udf/target/flink-udf-1.0.jar"));
+        classpaths.add(new URL("file:///Users/user/git/flink-udf/target/original-flink-udf-1.0.jar"));
 
         options.setClasspaths(classpaths);
 
-//        String programArgs[] = new String[]{"--port", "9999"};
-//        options.setProgramArgs(programArgs);
-        options.setEntryPointClass("platform.KafkaTest");
+        String programArgs[] = new String[]{"select * from OrderB"};
+        options.setProgramArgs(programArgs);
+        options.setEntryPointClass("platform.StreamingJob");
         options.setParallelism(1);
         options.setJobName("myflinkjob-udf");
 
@@ -66,11 +64,11 @@ public class SubmitJobPerJobYarnFromJar {
         System.out.println(jobId);
 
 
-        ApplicationId applicationId = (ApplicationId) clusterClient.getClusterId();
-        final RestClusterClient<ApplicationId> restClusterClient = (RestClusterClient<ApplicationId>) clusterClient;
-        JobDetailsInfo jobDetailsInfo = restClusterClient.getJobDetails(jobId).get();
-
-        System.out.println(jobDetailsInfo);
+//        ApplicationId applicationId = (ApplicationId) clusterClient.getClusterId();
+//        final RestClusterClient<ApplicationId> restClusterClient = (RestClusterClient<ApplicationId>) clusterClient;
+//        JobDetailsInfo jobDetailsInfo = restClusterClient.getJobDetails(jobId).get();
+//
+//        System.out.println(jobDetailsInfo);
 
 
 //        final CompletableFuture<JobResult> jobResultCompletableFuture = restClusterClient.requestJobResult(jobId);

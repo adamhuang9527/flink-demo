@@ -21,7 +21,7 @@ public class TableFunctionCollector$53 extends org.apache.flink.table.runtime.Ta
   }
 
   @Override
-  public void collect(Object record) throws Exception {
+  public void collect(Object record) {
     super.collect(record);
     org.apache.flink.types.Row in1 = (org.apache.flink.types.Row) getInput();
     org.apache.flink.types.Row in2 = (org.apache.flink.types.Row) record;
@@ -201,7 +201,7 @@ public class TableFunctionCollector$53 extends org.apache.flink.table.runtime.Ta
   }
 
   @Override
-  public void close() throws Exception {
+  public void close() {
     
     
   }

@@ -41,7 +41,6 @@ public class MyTest1 {
         CheckpointConfig config = env.getCheckpointConfig();
         config.enableExternalizedCheckpoints(CheckpointConfig.ExternalizedCheckpointCleanup.RETAIN_ON_CANCELLATION);
 
-
 ////        FlinkKafkaConsumer011 f =  new FlinkKafkaConsumer011();
 //        FlinkKafkaProducer011 p = new FlinkKafkaProducer011();
 //

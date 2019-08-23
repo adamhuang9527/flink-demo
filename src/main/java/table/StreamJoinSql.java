@@ -4,7 +4,6 @@ import org.apache.flink.api.java.tuple.Tuple3;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.table.api.Table;
-import org.apache.flink.table.api.TableEnvironment;
 import org.apache.flink.table.api.java.StreamTableEnvironment;
 import org.apache.flink.types.Row;
 
@@ -15,7 +14,7 @@ public class StreamJoinSql {
 
         // set up execution environment
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-        StreamTableEnvironment tEnv = TableEnvironment.getTableEnvironment(env);
+        StreamTableEnvironment tEnv = StreamTableEnvironment.create(env);
 
         DataStream<Tuple3<Long, String, Integer>> orderA = env.fromCollection(Arrays.asList(
                 new Tuple3<>(1L, "beer", 3),
